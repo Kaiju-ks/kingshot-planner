@@ -132,8 +132,8 @@ svg.addEventListener("click", (e) => {
   const rawX = e.clientX - rect.left;
   const rawY = e.clientY - rect.top;
 
-  const x = Math.round(rawX / gridSize) * gridSize;
-  const y = Math.round(rawY / gridSize) * gridSize;
+const x = Math.floor(rawX / gridSize) * gridSize;
+const y = Math.floor(rawY / gridSize) * gridSize;
 
   const type = buildingTypes[currentTool];
   const labelText = document.getElementById("labelInput").value;
