@@ -136,15 +136,22 @@ function createBuilding(type,x,y,label){
 
   } else if(type==="bear"){
 
-    const offsets=[
-      {dx:0,dy:0},
-      {dx:gridSize,dy:0},
-      {dx:-gridSize,dy:0},
-      {dx:gridSize/2,dy:gridSize/2},
-      {dx:-gridSize/2,dy:gridSize/2},
-      {dx:gridSize/2,dy:-gridSize/2},
-      {dx:-gridSize/2,dy:-gridSize/2}
-    ];
+const offsets=[
+  {dx:0,dy:0},
+
+  {dx:gridSize,dy:0},
+  {dx:-gridSize,dy:0},
+
+  {dx:gridSize/2,dy:gridSize/2},
+  {dx:-gridSize/2,dy:gridSize/2},
+
+  {dx:gridSize/2,dy:-gridSize/2},
+  {dx:-gridSize/2,dy:-gridSize/2},
+
+  // 🔥 ADD THESE TWO (missing pieces)
+  {dx:0,dy:gridSize},
+  {dx:0,dy:-gridSize}
+];
 
     offsets.forEach(o=>{
       g.appendChild(drawTile(x+o.dx,y+o.dy,"#ef4444"));
