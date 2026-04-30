@@ -259,13 +259,12 @@ svg.addEventListener("mousemove", e=>{
   selected.dataset.cy = pos.y;
 });
 
-  const t=selected.querySelector("text");
-  t.setAttribute("x",pos.x);
-  t.setAttribute("y",pos.y);
-
-  selected.dataset.cx=pos.x;
-  selected.dataset.cy=pos.y;
+// ✅ MUST BE OUTSIDE
+svg.addEventListener("mouseup", ()=>{
+  selected = null;
+  setTimeout(()=>isDragging=false,50);
 });
+  
 // 🔥 RELABEL FUNCTION
 function relabelBuildings() {
   const counts = { city: 1, mill: 1, flag: 1, bear: 1 };
