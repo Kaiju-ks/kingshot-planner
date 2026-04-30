@@ -118,6 +118,12 @@ const buildingTypes = {
 };
 
 let currentTool = "city";
+  const counters = {
+  city: 1,
+  mill: 1,
+  flag: 1,
+  bear: 1
+};
 let selected = null;
 let isDragging = false;
 
@@ -139,7 +145,23 @@ svg.addEventListener("click", (e) => {
   const x = Math.floor(rawX / gridSize) * gridSize;
   const y = Math.floor(rawY / gridSize) * gridSize;
 
-  createBuilding(currentTool, x, y, document.getElementById("labelInput").value);
+  let inputLabel = document.getElementById("labelInput").value;
+
+let finalLabel;
+if (inputLabel.trim() !== "") {
+  finalLabel = inputLabel;
+} else {
+  const names = {
+    city: "City",
+    mill: "Mill",
+    flag: "Flag",
+    bear: "Bear"
+  };
+
+  finalLabel = `${names[currentTool]} ${counters[currentTool]++}`;
+}
+
+createBuilding(currentTool, x, y, finalLabel);
 });
 
 function createBuilding(typeName, x, y, labelText) {
