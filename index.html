@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kingshot Planner (Diamond Grid)</title>
+  <title>Kingshot Planner (Diamond Perfect)</title>
   <style>
     body {
       margin: 0;
@@ -50,7 +50,7 @@
       stroke: black;
       stroke-width: 2;
       paint-order: stroke;
-      font-size: 12px;
+      font-size: 11px;
       pointer-events: none;
     }
   </style>
@@ -64,7 +64,6 @@
   <button onclick="setTool('bear')" id="bearBtn">Bear Trap</button>
 
   <input type="text" id="labelInput" placeholder="Label..." />
-  <input type="file" id="mapUpload" accept="image/*" />
 
   <button onclick="saveLayout()">Save Layout</button>
   <button onclick="loadLayout()">Load Layout</button>
@@ -76,50 +75,16 @@
 const svg = document.getElementById("canvas");
 const gridSize = 30;
 
-// 🔢 COUNTERS
-const counters = {
-  city: 1,
-  mill: 1,
-  flag: 1,
-  bear: 1
-};
+// counters
+const counters = { city:1, mill:1, flag:1, bear:1 };
 
-// 🔷 DIAMOND GRID (true)
+// 🔷 DRAW GRID (CENTER BASED)
 function drawGrid() {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
-  const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-let i = 0;
-for (let x = -gridSize; x < width + gridSize; x += gridSize) {
-  let j = 0;
-
-  for (let y = -gridSize; y < height + gridSize; y += gridSize) {
-
-    const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-
-    diamond.setAttribute("points", `
-      ${x},${y - gridSize/2}
-      ${x + gridSize/2},${y}
-      ${x},${y + gridSize/2}
-      ${x - gridSize/2},${y}
-    `);
-
-    // 🔥 every 5 tiles = bold line
-    const isMajor = (i % 5 === 0 || j % 5 === 0);
-
-    diamond.setAttribute("stroke", isMajor ? "#64748b" : "#1e293b");
-    diamond.setAttribute("stroke-width", isMajor ? "2" : "1");
-
-    diamond.setAttribute("fill", "none");
-
-    gridGroup.appendChild(diamond);
-
-    j++;
-  }
-  i++;
-}
+  for (let x = 0; x < width; x += gridSize) {
+    for (let y = 0; y < height; y += gridSize) {
 
       const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
@@ -131,17 +96,16 @@ for (let x = -gridSize; x < width + gridSize; x += gridSize) {
       `);
 
       diamond.setAttribute("fill", "none");
-      diamond.setAttribute("stroke", "#1e293b");
+      diamond.setAttribute("stroke", "#475569");
+      diamond.setAttribute("stroke-width", "1.2");
 
-      gridGroup.appendChild(diamond);
+      svg.appendChild(diamond);
     }
   }
-
-  svg.appendChild(gridGroup);
 }
 drawGrid();
 
-// 🧱 BUILDINGS
+// building sizes
 const buildingTypes = {
   city: { size: gridSize * 2, color: "#94a3b8" },
   mill: { size: gridSize * 2, color: "#facc15" },
@@ -153,13 +117,20 @@ let currentTool = "city";
 let selected = null;
 let isDragging = false;
 
-// TOOL SELECT
 function setTool(tool) {
   currentTool = tool;
   document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
   document.getElementById(tool + "Btn").classList.add("active");
 }
 setTool("city");
+
+// 🧲 SNAP TO CENTER
+function snap(x, y) {
+  return {
+    x: Math.round(x / gridSize) * gridSize,
+    y: Math.round(y / gridSize) * gridSize
+  };
+}
 
 // PLACE
 svg.addEventListener("click", (e) => {
@@ -169,20 +140,13 @@ svg.addEventListener("click", (e) => {
   const rawX = e.clientX - rect.left;
   const rawY = e.clientY - rect.top;
 
-  const x = Math.floor(rawX / gridSize) * gridSize + gridSize / 2;
-  const y = Math.floor(rawY / gridSize) * gridSize + gridSize / 2;
+  const pos = snap(rawX, rawY);
 
-  let inputLabel = document.getElementById("labelInput").value;
+  let input = document.getElementById("labelInput").value;
+  let label = input.trim() !== "" ? input :
+    `${currentTool.charAt(0).toUpperCase()+currentTool.slice(1)} ${counters[currentTool]++}`;
 
-  let label;
-  if (inputLabel.trim() !== "") {
-    label = inputLabel;
-  } else {
-    const names = { city: "City", mill: "Mill", flag: "Flag", bear: "Bear" };
-    label = `${names[currentTool]} ${counters[currentTool]++}`;
-  }
-
-  createBuilding(currentTool, x, y, label);
+  createBuilding(currentTool, pos.x, pos.y, label);
 });
 
 function createBuilding(typeName, x, y, labelText) {
@@ -192,45 +156,46 @@ function createBuilding(typeName, x, y, labelText) {
 
   // FLAG RANGE
   if (typeName === "flag") {
-    const range = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    range.setAttribute("x", -gridSize);
-    range.setAttribute("y", -gridSize);
-    range.setAttribute("width", gridSize * 3);
-    range.setAttribute("height", gridSize * 3);
+    const range = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+    range.setAttribute("points", `
+      ${x},${y - gridSize*1.5}
+      ${x + gridSize*1.5},${y}
+      ${x},${y + gridSize*1.5}
+      ${x - gridSize*1.5},${y}
+    `);
+
     range.setAttribute("fill", "#22c55e33");
     range.setAttribute("stroke", "#22c55e");
-    range.setAttribute("stroke-dasharray", "4");
-    group.appendChild(range);
+
+    svg.appendChild(range);
   }
 
-  // MAIN SHAPE
-const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  // DIAMOND SHAPE (CENTERED)
+  const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  const half = type.size / 2;
 
-const half = type.size / 2;
+  diamond.setAttribute("points", `
+    ${x},${y - half}
+    ${x + half},${y}
+    ${x},${y + half}
+    ${x - half},${y}
+  `);
 
-diamond.setAttribute("points", `
-  ${half},0
-  ${type.size},${half}
-  ${half},${type.size}
-  0,${half}
-`);
+  diamond.setAttribute("fill", type.color);
+  diamond.setAttribute("stroke", "black");
 
-diamond.setAttribute("fill", type.color);
-diamond.setAttribute("stroke", "black");
+  group.appendChild(diamond);
 
-group.appendChild(diamond);
-
-  // LABEL CENTERED
+  // LABEL CENTER
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", type.size / 2);
-  text.setAttribute("y", type.size / 2);
+  text.setAttribute("x", x);
+  text.setAttribute("y", y);
   text.setAttribute("text-anchor", "middle");
   text.setAttribute("dominant-baseline", "middle");
   text.textContent = labelText;
 
   group.appendChild(text);
-
-  group.setAttribute("transform", `translate(${x},${y})`);
 
   // DRAG
   group.addEventListener("mousedown", (e) => {
@@ -239,7 +204,6 @@ group.appendChild(diamond);
     e.stopPropagation();
   });
 
-  // EDIT LABEL
   group.addEventListener("dblclick", () => {
     const newLabel = prompt("Edit label:", text.textContent);
     if (newLabel !== null) text.textContent = newLabel;
@@ -248,18 +212,27 @@ group.appendChild(diamond);
   svg.appendChild(group);
 }
 
-// DRAG SNAP
+// DRAG MOVE
 svg.addEventListener("mousemove", (e) => {
   if (!selected) return;
 
   const rect = svg.getBoundingClientRect();
-  const rawX = e.clientX - rect.left;
-  const rawY = e.clientY - rect.top;
+  const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
 
-  const x = Math.floor(rawX / gridSize) * gridSize;
-  const y = Math.floor(rawY / gridSize) * gridSize;
+  const poly = selected.querySelector("polygon");
+  const text = selected.querySelector("text");
 
-  selected.setAttribute("transform", `translate(${x},${y})`);
+  const half = (poly.getBBox().width) / 2;
+
+  poly.setAttribute("points", `
+    ${pos.x},${pos.y - half}
+    ${pos.x + half},${pos.y}
+    ${pos.x},${pos.y + half}
+    ${pos.x - half},${pos.y}
+  `);
+
+  text.setAttribute("x", pos.x);
+  text.setAttribute("y", pos.y);
 });
 
 svg.addEventListener("mouseup", () => {
@@ -271,15 +244,13 @@ svg.addEventListener("mouseup", () => {
 function saveLayout() {
   const data = [];
 
-  document.querySelectorAll("svg g").forEach(group => {
-    const transform = group.getAttribute("transform");
-    const match = transform.match(/translate\((.*),(.*)\)/);
-
-    const x = parseFloat(match[1]);
-    const y = parseFloat(match[2]);
-    const label = group.querySelector("text").textContent;
-
-    data.push({ x, y, label });
+  document.querySelectorAll("svg g").forEach(g => {
+    const text = g.querySelector("text");
+    data.push({
+      x: parseFloat(text.getAttribute("x")),
+      y: parseFloat(text.getAttribute("y")),
+      label: text.textContent
+    });
   });
 
   localStorage.setItem("layout", JSON.stringify(data));
@@ -296,26 +267,6 @@ function loadLayout() {
     createBuilding(currentTool, d.x, d.y, d.label);
   });
 }
-
-// MAP UPLOAD
-document.getElementById("mapUpload").addEventListener("change", function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    let img = document.getElementById("bg");
-    if (!img) {
-      img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      img.setAttribute("id", "bg");
-      img.setAttribute("width", "100%");
-      img.setAttribute("height", "100%");
-      svg.prepend(img);
-    }
-    img.setAttributeNS("http://www.w3.org/1999/xlink", "href", evt.target.result);
-  };
-  reader.readAsDataURL(file);
-});
 </script>
 
 </body>
