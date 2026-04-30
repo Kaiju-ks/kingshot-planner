@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kingshot Planner Pro+</title>
+  <title>Kingshot Planner (Diamond Grid)</title>
   <style>
     body {
       margin: 0;
@@ -71,7 +71,7 @@
 
 <script>
 const svg = document.getElementById("canvas");
-const gridSize = 30;
+const gridSize = 40;
 
 // 🔷 DIAMOND GRID
 function drawGrid() {
@@ -86,7 +86,7 @@ function drawGrid() {
   );
 
   for (let x = -width; x < width * 2; x += gridSize) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", x);
     line.setAttribute("y1", -height);
     line.setAttribute("x2", x);
@@ -96,7 +96,7 @@ function drawGrid() {
   }
 
   for (let y = -height; y < height * 2; y += gridSize) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", -width);
     line.setAttribute("y1", y);
     line.setAttribute("x2", width * 2);
@@ -121,7 +121,6 @@ let currentTool = "city";
 let selected = null;
 let isDragging = false;
 
-// 🔘 TOOL
 function setTool(tool) {
   currentTool = tool;
   document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -129,7 +128,7 @@ function setTool(tool) {
 }
 setTool("city");
 
-// 🏗️ PLACE
+// 🏗️ PLACE BUILDING
 svg.addEventListener("click", (e) => {
   if (selected || isDragging) return;
 
@@ -161,6 +160,7 @@ function createBuilding(typeName, x, y, labelText) {
     group.appendChild(range);
   }
 
+  // MAIN SHAPE
   const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rectEl.setAttribute("x", 0);
   rectEl.setAttribute("y", 0);
@@ -171,12 +171,15 @@ function createBuilding(typeName, x, y, labelText) {
 
   group.appendChild(rectEl);
 
+  // LABEL (counter-rotated)
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
   text.setAttribute("y", type.size + 12);
-  text.setAttribute("text-anchor", "start");
+  text.setAttribute("transform", "rotate(-45)");
   text.textContent = labelText;
 
   group.appendChild(text);
+
+  // 🔷 rotate building to match grid
   group.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
 
   // DRAG START
@@ -206,7 +209,7 @@ svg.addEventListener("mousemove", (e) => {
   const x = Math.floor(rawX / gridSize) * gridSize;
   const y = Math.floor(rawY / gridSize) * gridSize;
 
-  selected.setAttribute("transform", `translate(${x},${y})`);
+  selected.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
 });
 
 svg.addEventListener("mouseup", () => {
