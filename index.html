@@ -18,7 +18,6 @@
       padding: 12px;
       border-radius: 10px;
       z-index: 10;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
     }
 
     button, input {
@@ -34,8 +33,6 @@
       color: white;
       cursor: pointer;
     }
-
-    button:hover { background: #475569; }
 
     .active {
       background: gold;
@@ -59,12 +56,11 @@
 
 <div id="toolbar">
   <button onclick="setTool('city')" id="cityBtn">City</button>
-  <button onclick="setTool('fort')" id="fortBtn">Fort</button>
   <button onclick="setTool('mill')" id="millBtn">Mill</button>
-  <button onclick="setTool('tower')" id="towerBtn">Tower</button>
+  <button onclick="setTool('flag')" id="flagBtn">Flag</button>
+  <button onclick="setTool('bear')" id="bearBtn">Bear Trap</button>
 
   <input type="text" id="labelInput" placeholder="Label..." />
-
   <input type="file" id="mapUpload" accept="image/*" />
 
   <button onclick="saveLayout()">Save Layout</button>
@@ -75,53 +71,51 @@
 
 <script>
 const svg = document.getElementById("canvas");
-function drawGrid(size = 50) {
+const gridSize = 50;
+
+// 🟦 DRAW GRID
+function drawGrid() {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
   const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  gridGroup.setAttribute("id", "grid");
 
-  // vertical lines
-  for (let x = 0; x < width; x += size) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  for (let x = 0; x < width; x += gridSize) {
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", x);
     line.setAttribute("y1", 0);
     line.setAttribute("x2", x);
     line.setAttribute("y2", height);
     line.setAttribute("stroke", "#1e293b");
-    line.setAttribute("stroke-width", "1");
-    gridGroup.appendChild(line);
+    svg.appendChild(line);
   }
 
-  // horizontal lines
-  for (let y = 0; y < height; y += size) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  for (let y = 0; y < height; y += gridSize) {
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", 0);
     line.setAttribute("y1", y);
     line.setAttribute("x2", width);
     line.setAttribute("y2", y);
     line.setAttribute("stroke", "#1e293b");
-    line.setAttribute("stroke-width", "1");
-    gridGroup.appendChild(line);
+    svg.appendChild(line);
   }
-
-  svg.prepend(gridGroup);
 }
-
 drawGrid();
+
+// 🧱 BUILDING TYPES
+const buildingTypes = {
+  city: { size: gridSize * 2, color: "#94a3b8" },
+  mill: { size: gridSize * 2, color: "#facc15" },
+  flag: { size: gridSize * 1, color: "#22c55e" },
+  bear: { size: gridSize * 3, color: "#ef4444" }
+};
+
 let currentTool = "city";
-let selectedGroup = null;
+let selected = null;
 let offsetX = 0;
 let offsetY = 0;
 
-const buildingTypes = {
-  city: { shape: "square", size: 40, color: "#94a3b8" },
-  fort: { shape: "circle", size: 50, color: "#3b82f6" },
-  mill: { shape: "diamond", size: 40, color: "#facc15" },
-  tower: { shape: "triangle", size: 35, color: "#a855f7" }
-};
-
+// 🔘 TOOL SWITCH
 function setTool(tool) {
   currentTool = tool;
   document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -129,129 +123,94 @@ function setTool(tool) {
 }
 setTool("city");
 
+// 🏗️ CREATE BUILDING
 svg.addEventListener("click", (e) => {
-  if (selectedGroup) return;
+  if (selected) return;
 
-  const pt = getMousePosition(e);
+  const rect = svg.getBoundingClientRect();
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
+
+  const x = Math.round(rawX / gridSize) * gridSize;
+  const y = Math.round(rawY / gridSize) * gridSize;
+
+  const type = buildingTypes[currentTool];
   const labelText = document.getElementById("labelInput").value;
-
-  createBuilding(currentTool, pt.x, pt.y, labelText);
-});
-
-function createBuilding(typeName, x, y, labelText) {
-  const type = buildingTypes[typeName];
-  const size = type.size;
 
   const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  let el;
-
-  if (type.shape === "square") {
-    el = createRect(size);
-  }
-  if (type.shape === "circle") {
-    el = createCircle(size);
-  }
-  if (type.shape === "diamond") {
-    el = createRect(size);
-    el.setAttribute("transform", "rotate(45)");
-  }
-  if (type.shape === "triangle") {
-    el = createTriangle(size);
+  // FLAG RANGE (3x3)
+  if (currentTool === "flag") {
+    const range = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    range.setAttribute("x", -gridSize * 1.5);
+    range.setAttribute("y", -gridSize * 1.5);
+    range.setAttribute("width", gridSize * 3);
+    range.setAttribute("height", gridSize * 3);
+    range.setAttribute("fill", "#22c55e33");
+    range.setAttribute("stroke", "#22c55e");
+    range.setAttribute("stroke-dasharray", "4");
+    group.appendChild(range);
   }
 
-  el.setAttribute("fill", type.color);
-  el.setAttribute("stroke", "black");
+  // MAIN BUILDING
+  const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rectEl.setAttribute("x", -type.size / 2);
+  rectEl.setAttribute("y", -type.size / 2);
+  rectEl.setAttribute("width", type.size);
+  rectEl.setAttribute("height", type.size);
+  rectEl.setAttribute("fill", type.color);
+  rectEl.setAttribute("stroke", "black");
 
+  group.appendChild(rectEl);
+
+  // LABEL
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("y", size);
+  text.setAttribute("y", type.size / 2 + 15);
   text.setAttribute("text-anchor", "middle");
   text.textContent = labelText;
 
-  group.appendChild(el);
   group.appendChild(text);
   group.setAttribute("transform", `translate(${x},${y})`);
 
-  enableDrag(group);
+  // DRAG
+  group.addEventListener("mousedown", (e) => {
+    selected = group;
+    offsetX = e.clientX;
+    offsetY = e.clientY;
+    e.stopPropagation();
+  });
 
-  // ✏️ Double-click to edit label
+  // EDIT LABEL
   group.addEventListener("dblclick", () => {
     const newLabel = prompt("Edit label:", text.textContent);
-    if (newLabel !== null) {
-      text.textContent = newLabel;
-    }
+    if (newLabel !== null) text.textContent = newLabel;
   });
 
   svg.appendChild(group);
-}
+});
 
-function createRect(size) {
-  const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  r.setAttribute("x", -size/2);
-  r.setAttribute("y", -size/2);
-  r.setAttribute("width", size);
-  r.setAttribute("height", size);
-  return r;
-}
-
-function createCircle(size) {
-  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  c.setAttribute("cx", 0);
-  c.setAttribute("cy", 0);
-  c.setAttribute("r", size/2);
-  return c;
-}
-
-function createTriangle(size) {
-  const t = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-  t.setAttribute("points",
-    `0,${-size/2} ${-size/2},${size/2} ${size/2},${size/2}`);
-  return t;
-}
-
-// 🖱️ Dragging
-function enableDrag(group) {
-  group.addEventListener("mousedown", (e) => {
-    selectedGroup = group;
-    const pt = getMousePosition(e);
-    offsetX = pt.x;
-    offsetY = pt.y;
-    e.stopPropagation();
-  });
-}
-
+// 🖱️ DRAG MOVE
 svg.addEventListener("mousemove", (e) => {
-  if (!selectedGroup) return;
+  if (!selected) return;
 
-  const pt = getMousePosition(e);
-  const dx = pt.x - offsetX;
-  const dy = pt.y - offsetY;
+  const dx = e.clientX - offsetX;
+  const dy = e.clientY - offsetY;
 
-  const transform = selectedGroup.getAttribute("transform");
+  const transform = selected.getAttribute("transform");
   const match = transform.match(/translate\((.*),(.*)\)/);
 
   let x = parseFloat(match[1]) + dx;
   let y = parseFloat(match[2]) + dy;
 
-  selectedGroup.setAttribute("transform", `translate(${x},${y})`);
+  selected.setAttribute("transform", `translate(${x},${y})`);
 
-  offsetX = pt.x;
-  offsetY = pt.y;
+  offsetX = e.clientX;
+  offsetY = e.clientY;
 });
 
-svg.addEventListener("mouseup", () => {
-  selectedGroup = null;
-});
+svg.addEventListener("mouseup", () => selected = null);
 
-function getMousePosition(evt) {
-  const rect = svg.getBoundingClientRect();
-  return {
-    x: evt.clientX - rect.left,
-    y: evt.clientY - rect.top
-  };
-}
-
-// 💾 Save
+// 💾 SAVE
 function saveLayout() {
   const data = [];
 
@@ -261,33 +220,37 @@ function saveLayout() {
 
     const x = parseFloat(match[1]);
     const y = parseFloat(match[2]);
-
     const label = group.querySelector("text").textContent;
 
-    let type = "city";
-    if (group.innerHTML.includes("circle")) type = "fort";
-    if (group.innerHTML.includes("polygon")) type = "tower";
-    if (group.innerHTML.includes("rotate")) type = "mill";
-
-    data.push({ type, x, y, label });
+    data.push({ x, y, label });
   });
 
-  localStorage.setItem("kingshotLayout", JSON.stringify(data));
-  alert("Layout saved!");
+  localStorage.setItem("layout", JSON.stringify(data));
+  alert("Saved!");
 }
 
-// 📂 Load
+// 📂 LOAD
 function loadLayout() {
-  const data = JSON.parse(localStorage.getItem("kingshotLayout") || "[]");
+  const data = JSON.parse(localStorage.getItem("layout") || "[]");
 
   document.querySelectorAll("svg g").forEach(g => g.remove());
 
-  data.forEach(b => {
-    createBuilding(b.type, b.x, b.y, b.label);
+  data.forEach(d => {
+    document.getElementById("labelInput").value = d.label;
+    createFakeClick(d.x, d.y);
   });
 }
 
-// 🗺️ Map Upload
+// helper
+function createFakeClick(x, y) {
+  createEvent = new MouseEvent("click", {
+    clientX: x,
+    clientY: y
+  });
+  svg.dispatchEvent(createEvent);
+}
+
+// 🗺️ MAP UPLOAD
 document.getElementById("mapUpload").addEventListener("change", function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -298,8 +261,6 @@ document.getElementById("mapUpload").addEventListener("change", function(e) {
     if (!img) {
       img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("id", "bg");
-      img.setAttribute("x", 0);
-      img.setAttribute("y", 0);
       img.setAttribute("width", "100%");
       img.setAttribute("height", "100%");
       svg.prepend(img);
