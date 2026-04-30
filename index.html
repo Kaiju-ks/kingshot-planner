@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kingshot Planner Pro+</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      font-family: Arial;
+      color: white;
+    }
+
+    #toolbar {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background: #1e293b;
+      padding: 12px;
+      border-radius: 10px;
+      z-index: 10;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    button, input {
+      display: block;
+      margin: 5px 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      background: #334155;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover { background: #475569; }
+
+    .active {
+      background: gold;
+      color: black;
+    }
+
+    svg {
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    text {
+      fill: white;
+      font-size: 12px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <button onclick="setTool('city')" id="cityBtn">City</button>
+  <button onclick="setTool('fort')" id="fortBtn">Fort</button>
+  <button onclick="setTool('mill')" id="millBtn">Mill</button>
+  <button onclick="setTool('tower')" id="towerBtn">Tower</button>
+
+  <input type="text" id="labelInput" placeholder="Label..." />
+
+  <input type="file" id="mapUpload" accept="image/*" />
+
+  <button onclick="saveLayout()">Save Layout</button>
+  <button onclick="loadLayout()">Load Layout</button>
+</div>
+
+<svg id="canvas"></svg>
+
+<script>
+const svg = document.getElementById("canvas");
+let currentTool = "city";
+let selectedGroup = null;
+let offsetX = 0;
+let offsetY = 0;
+
+const buildingTypes = {
+  city: { shape: "square", size: 40, color: "#94a3b8" },
+  fort: { shape: "circle", size: 50, color: "#3b82f6" },
+  mill: { shape: "diamond", size: 40, color: "#facc15" },
+  tower: { shape: "triangle", size: 35, color: "#a855f7" }
+};
+
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+  document.getElementById(tool + "Btn").classList.add("active");
+}
+setTool("city");
+
+svg.addEventListener("click", (e) => {
+  if (selectedGroup) return;
+
+  const pt = getMousePosition(e);
+  const labelText = document.getElementById("labelInput").value;
+
+  createBuilding(currentTool, pt.x, pt.y, labelText);
+});
+
+function createBuilding(typeName, x, y, labelText) {
+  const type = buildingTypes[typeName];
+  const size = type.size;
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+  let el;
+
+  if (type.shape === "square") {
+    el = createRect(size);
+  }
+  if (type.shape === "circle") {
+    el = createCircle(size);
+  }
+  if (type.shape === "diamond") {
+    el = createRect(size);
+    el.setAttribute("transform", "rotate(45)");
+  }
+  if (type.shape === "triangle") {
+    el = createTriangle(size);
+  }
+
+  el.setAttribute("fill", type.color);
+  el.setAttribute("stroke", "black");
+
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("y", size);
+  text.setAttribute("text-anchor", "middle");
+  text.textContent = labelText;
+
+  group.appendChild(el);
+  group.appendChild(text);
+  group.setAttribute("transform", `translate(${x},${y})`);
+
+  enableDrag(group);
+
+  // ✏️ Double-click to edit label
+  group.addEventListener("dblclick", () => {
+    const newLabel = prompt("Edit label:", text.textContent);
+    if (newLabel !== null) {
+      text.textContent = newLabel;
+    }
+  });
+
+  svg.appendChild(group);
+}
+
+function createRect(size) {
+  const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  r.setAttribute("x", -size/2);
+  r.setAttribute("y", -size/2);
+  r.setAttribute("width", size);
+  r.setAttribute("height", size);
+  return r;
+}
+
+function createCircle(size) {
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", 0);
+  c.setAttribute("cy", 0);
+  c.setAttribute("r", size/2);
+  return c;
+}
+
+function createTriangle(size) {
+  const t = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  t.setAttribute("points",
+    `0,${-size/2} ${-size/2},${size/2} ${size/2},${size/2}`);
+  return t;
+}
+
+// 🖱️ Dragging
+function enableDrag(group) {
+  group.addEventListener("mousedown", (e) => {
+    selectedGroup = group;
+    const pt = getMousePosition(e);
+    offsetX = pt.x;
+    offsetY = pt.y;
+    e.stopPropagation();
+  });
+}
+
+svg.addEventListener("mousemove", (e) => {
+  if (!selectedGroup) return;
+
+  const pt = getMousePosition(e);
+  const dx = pt.x - offsetX;
+  const dy = pt.y - offsetY;
+
+  const transform = selectedGroup.getAttribute("transform");
+  const match = transform.match(/translate\((.*),(.*)\)/);
+
+  let x = parseFloat(match[1]) + dx;
+  let y = parseFloat(match[2]) + dy;
+
+  selectedGroup.setAttribute("transform", `translate(${x},${y})`);
+
+  offsetX = pt.x;
+  offsetY = pt.y;
+});
+
+svg.addEventListener("mouseup", () => {
+  selectedGroup = null;
+});
+
+function getMousePosition(evt) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+// 💾 Save
+function saveLayout() {
+  const data = [];
+
+  document.querySelectorAll("svg g").forEach(group => {
+    const transform = group.getAttribute("transform");
+    const match = transform.match(/translate\((.*),(.*)\)/);
+
+    const x = parseFloat(match[1]);
+    const y = parseFloat(match[2]);
+
+    const label = group.querySelector("text").textContent;
+
+    let type = "city";
+    if (group.innerHTML.includes("circle")) type = "fort";
+    if (group.innerHTML.includes("polygon")) type = "tower";
+    if (group.innerHTML.includes("rotate")) type = "mill";
+
+    data.push({ type, x, y, label });
+  });
+
+  localStorage.setItem("kingshotLayout", JSON.stringify(data));
+  alert("Layout saved!");
+}
+
+// 📂 Load
+function loadLayout() {
+  const data = JSON.parse(localStorage.getItem("kingshotLayout") || "[]");
+
+  document.querySelectorAll("svg g").forEach(g => g.remove());
+
+  data.forEach(b => {
+    createBuilding(b.type, b.x, b.y, b.label);
+  });
+}
+
+// 🗺️ Map Upload
+document.getElementById("mapUpload").addEventListener("change", function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    let img = document.getElementById("bg");
+    if (!img) {
+      img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      img.setAttribute("id", "bg");
+      img.setAttribute("x", 0);
+      img.setAttribute("y", 0);
+      img.setAttribute("width", "100%");
+      img.setAttribute("height", "100%");
+      svg.prepend(img);
+    }
+    img.setAttributeNS("http://www.w3.org/1999/xlink", "href", evt.target.result);
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+
+</body>
+</html>
