@@ -193,19 +193,14 @@ svg.addEventListener("click", (e) => {
 svg.addEventListener("mousemove", (e) => {
   if (!selected) return;
 
-  const dx = e.clientX - offsetX;
-  const dy = e.clientY - offsetY;
+  const rect = svg.getBoundingClientRect();
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
 
-  const transform = selected.getAttribute("transform");
-  const match = transform.match(/translate\((.*),(.*)\)/);
-
-  let x = parseFloat(match[1]) + dx;
-  let y = parseFloat(match[2]) + dy;
+  const x = Math.round(rawX / gridSize) * gridSize;
+  const y = Math.round(rawY / gridSize) * gridSize;
 
   selected.setAttribute("transform", `translate(${x},${y})`);
-
-  offsetX = e.clientX;
-  offsetY = e.clientY;
 });
 
 svg.addEventListener("mouseup", () => selected = null);
