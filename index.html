@@ -3,7 +3,7 @@
 <head>
   <title>Kingshot Planner</title>
   <style>
-    body { margin:0; background:#dbeafe; font-family:Arial; }
+    body { margin:0; background:#f1f5f9; font-family:Arial; }
 
     #toolbar {
       position:fixed;
@@ -89,9 +89,9 @@ function drawGrid(){
       `);
 
       d.setAttribute("fill","none");
-    d.setAttribute("stroke", "#ffffff");
-d.setAttribute("stroke-opacity", "0.25");
-d.setAttribute("stroke-width", "1.2");
+    d.setAttribute("stroke", "#94a3b8");   // softer gray-blue
+    d.setAttribute("stroke-opacity", "0.35");
+    d.setAttribute("stroke-width", "1.1");
 
       svg.appendChild(d);
     }
@@ -125,8 +125,8 @@ function drawTile(cx,cy,color){
   `);
 
   p.setAttribute("fill",color);
- p.setAttribute("stroke", "#000");
-p.setAttribute("stroke-width", "1.5");
+p.setAttribute("stroke", "#000000aa");
+p.setAttribute("stroke-width", "1.2");
 
   return p;
 }
