@@ -249,7 +249,10 @@ svg.addEventListener("mousemove",e=>{
       return `${px+dx},${py+dy}`;
     }).join(" ");
     el.setAttribute("points",pts);
-  });
+svg.addEventListener("mouseup", ()=>{
+  selected = null;
+  setTimeout(()=>isDragging=false,50);
+});
 
   const t=selected.querySelector("text");
   t.setAttribute("x",pos.x);
