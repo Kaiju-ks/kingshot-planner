@@ -223,6 +223,7 @@ function createBuilding(type,x,y,label){
 g.addEventListener("contextmenu", e=>{
   e.preventDefault();
   g.remove();
+  relabelBuildings(); // 🔥 add this line
 });
   svg.appendChild(g);
 }
@@ -267,7 +268,40 @@ svg.addEventListener("mouseup",()=>{
   selected=null;
   setTimeout(()=>isDragging=false,50);
 });
+svg.addEventListener("mouseup", ()=>{
+  selected=null;
+  setTimeout(()=>isDragging=false,50);
+});
 
+// 🔥 ADD THIS RIGHT HERE
+function relabelBuildings() {
+  const counts = { city: 1, mill: 1, flag: 1, bear: 1 };
+
+  document.querySelectorAll("svg g").forEach(g => {
+    const text = g.querySelector("text");
+    if (!text) return;
+
+    const label = text.textContent.toLowerCase();
+
+    let type = null;
+    if (label.includes("city")) type = "city";
+    else if (label.includes("mill")) type = "mill";
+    else if (label.includes("flag")) type = "flag";
+    else if (label.includes("bear")) type = "bear";
+
+    if (type) {
+      text.textContent = `${type} ${counts[type]++}`;
+    }
+  });
+
+  counters.city = counts.city;
+  counters.mill = counts.mill;
+  counters.flag = counts.flag;
+  counters.bear = counts.bear;
+}
+
+// SAVE/LOAD
+function saveLayout(){
 // SAVE/LOAD
 function saveLayout(){
   const data=[];
