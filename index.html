@@ -149,20 +149,21 @@ if(type==="city"||type==="mill"){
   });
 
   // 🔥 ADD THIS PART
-  const outline = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+const outline = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
-  outline.setAttribute("points", `
-    ${x},${y - gridSize/2}
-    ${x + gridSize/2},${y}
-    ${x},${y + gridSize*1.5}
-    ${x - gridSize/2},${y}
-  `);
+outline.setAttribute("points", `
+  ${x},${y - gridSize/2}
+  ${x + gridSize},${y + gridSize/2}
+  ${x},${y + gridSize*1.5}
+  ${x - gridSize},${y + gridSize/2}
+`);
 
-  outline.setAttribute("fill", "none");
-  outline.setAttribute("stroke", "white");
-  outline.setAttribute("stroke-width", "2");
+outline.setAttribute("fill", "none");
+outline.setAttribute("stroke", "white");
+outline.setAttribute("stroke-width", "2");
+outline.setAttribute("pointer-events", "none");
 
-  g.appendChild(outline);
+g.appendChild(outline);
 }
 
   // BEAR
