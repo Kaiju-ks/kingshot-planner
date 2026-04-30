@@ -139,11 +139,20 @@ svg.addEventListener("click", (e) => {
   if (selected || isDragging) return;
 
   const rect = svg.getBoundingClientRect();
-  const rawX = e.clientX - rect.left;
-  const rawY = e.clientY - rect.top;
+const rawX = e.clientX - rect.left;
+const rawY = e.clientY - rect.top;
 
-  const x = Math.floor(rawX / gridSize) * gridSize;
-  const y = Math.floor(rawY / gridSize) * gridSize;
+// convert screen → diamond grid space
+const isoX = (rawX - rawY) / 2;
+const isoY = (rawX + rawY) / 2;
+
+// snap in diamond space
+const snappedX = Math.round(isoX / gridSize) * gridSize;
+const snappedY = Math.round(isoY / gridSize) * gridSize;
+
+// convert back → screen space
+const x = snappedX + snappedY;
+const y = snappedY - snappedX;
 
   let inputLabel = document.getElementById("labelInput").value;
 
