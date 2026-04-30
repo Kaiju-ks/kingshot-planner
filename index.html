@@ -219,7 +219,11 @@ function createBuilding(type,x,y,label){
     isDragging=true;
     e.stopPropagation();
   });
-
+// 🗑️ RIGHT CLICK DELETE
+g.addEventListener("contextmenu", e=>{
+  e.preventDefault();
+  g.remove();
+});
   svg.appendChild(g);
 }
 
