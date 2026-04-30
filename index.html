@@ -22,22 +22,10 @@
       border-radius:6px;
     }
 
-    button {
-      background:#334155;
-      color:white;
-      cursor:pointer;
-    }
+    button { background:#334155; color:white; cursor:pointer; }
+    .active { background:gold; color:black; }
 
-    .active {
-      background:gold;
-      color:black;
-    }
-
-    svg {
-      width:100vw;
-      height:100vh;
-      cursor:crosshair;
-    }
+    svg { width:100vw; height:100vh; cursor:crosshair; }
 
     text {
       fill:white;
@@ -147,22 +135,25 @@ function drawTile(cx,cy,color){
 function createBuilding(type,x,y,label){
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
 
-if(type==="city"||type==="mill"){
-  const color = type==="city" ? "#94a3b8" : "#facc15";
+  // ✅ CITY / MILL (correct 2x2 diamond)
+  if(type==="city"||type==="mill"){
+    const color = type==="city" ? "#94a3b8" : "#facc15";
 
-  const offsets = [
-    {dx: -gridSize/2, dy: 0},
-    {dx: gridSize/2, dy: 0},
-    {dx: 0, dy: -gridSize/2},
-    {dx: 0, dy: gridSize/2}
-  ];
+    const offsets = [
+      {dx:0, dy:0},
+      {dx:gridSize/2, dy:gridSize/2},
+      {dx:-gridSize/2, dy:gridSize/2},
+      {dx:0, dy:gridSize}
+    ];
 
-  offsets.forEach(o=>{
-    g.appendChild(drawTile(x+o.dx,y+o.dy,color));
-  });
-}
+    offsets.forEach(o=>{
+      g.appendChild(drawTile(x+o.dx,y+o.dy,color));
+    });
 
-  } else if(type==="bear"){
+  }
+
+  // ✅ BEAR (3x3 diamond)
+  else if(type==="bear"){
 
     const offsets=[
       {dx:0,dy:0},
@@ -180,29 +171,31 @@ if(type==="city"||type==="mill"){
       g.appendChild(drawTile(x+o.dx,y+o.dy,"#ef4444"));
     });
 
-  } else {
+  }
 
-    // FLAG TILE
+  // ✅ FLAG (diamond range)
+  else {
+
+    // center tile
     g.appendChild(drawTile(x,y,"#22c55e"));
 
-    // 🔥 RANGE BOX (square)
-const size = gridSize * 3;
+    const size = gridSize * 3;
 
-const diamond = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+    const diamond = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
-diamond.setAttribute("points", `
-  ${x},${y - size/2}
-  ${x + size/2},${y}
-  ${x},${y + size/2}
-  ${x - size/2},${y}
-`);
+    diamond.setAttribute("points", `
+      ${x},${y - size/2}
+      ${x + size/2},${y}
+      ${x},${y + size/2}
+      ${x - size/2},${y}
+    `);
 
-diamond.setAttribute("fill", "#22c55e");
-diamond.setAttribute("opacity", "0.12");
-diamond.setAttribute("stroke", "#22c55e");
-diamond.setAttribute("stroke-width", "2");
+    diamond.setAttribute("fill", "#22c55e");
+    diamond.setAttribute("opacity", "0.12");
+    diamond.setAttribute("stroke", "#22c55e");
+    diamond.setAttribute("stroke-width", "2");
 
-g.insertBefore(diamond, g.firstChild);
+    g.insertBefore(diamond, g.firstChild);
   }
 
   // LABEL
@@ -250,17 +243,12 @@ svg.addEventListener("mousemove",e=>{
   const dx=pos.x-selected.dataset.cx;
   const dy=pos.y-selected.dataset.cy;
 
-  selected.querySelectorAll("polygon, rect").forEach(el=>{
-    if(el.tagName==="polygon"){
-      const pts=el.getAttribute("points").split(" ").map(pt=>{
-        let [px,py]=pt.split(",").map(Number);
-        return `${px+dx},${py+dy}`;
-      }).join(" ");
-      el.setAttribute("points",pts);
-    } else {
-      el.setAttribute("x", Number(el.getAttribute("x"))+dx);
-      el.setAttribute("y", Number(el.getAttribute("y"))+dy);
-    }
+  selected.querySelectorAll("polygon").forEach(el=>{
+    const pts=el.getAttribute("points").split(" ").map(pt=>{
+      let [px,py]=pt.split(",").map(Number);
+      return `${px+dx},${py+dy}`;
+    }).join(" ");
+    el.setAttribute("points",pts);
   });
 
   const t=selected.querySelector("text");
