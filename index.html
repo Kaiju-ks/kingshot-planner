@@ -209,6 +209,7 @@ svg.addEventListener("mousemove", (e) => {
   const x = Math.floor(rawX / gridSize) * gridSize;
   const y = Math.floor(rawY / gridSize) * gridSize;
 
+  // 🔥 keep rotation applied
   selected.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
 });
 
