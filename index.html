@@ -143,8 +143,8 @@ const y = Math.floor(rawY / gridSize) * gridSize;
   // FLAG RANGE (3x3)
   if (currentTool === "flag") {
     const range = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    range.setAttribute("x", -gridSize * 1.5);
-    range.setAttribute("y", -gridSize * 1.5);
+    range.setAttribute("x", -gridSize);
+    range.setAttribute("y", -gridSize);
     range.setAttribute("width", gridSize * 3);
     range.setAttribute("height", gridSize * 3);
     range.setAttribute("fill", "#22c55e33");
@@ -155,8 +155,8 @@ const y = Math.floor(rawY / gridSize) * gridSize;
 
   // MAIN BUILDING
   const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rectEl.setAttribute("x", -type.size / 2);
-  rectEl.setAttribute("y", -type.size / 2);
+  rectEl.setAttribute("x", 0);
+  rectEl.setAttribute("y", 0);
   rectEl.setAttribute("width", type.size);
   rectEl.setAttribute("height", type.size);
   rectEl.setAttribute("fill", type.color);
