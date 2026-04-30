@@ -71,19 +71,18 @@
 
 <script>
 const svg = document.getElementById("canvas");
-const gridSize = 30;
+const gridSize = 40;
 
-// 🟦 DRAW GRID
+// 🔷 DIAMOND GRID
 function drawGrid() {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
   const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  // rotate entire grid 45° around center
   gridGroup.setAttribute(
     "transform",
-    `rotate(45 ${width / 2} ${height / 2})`
+    `translate(${width/2}, ${height/2}) rotate(45) translate(${-width/2}, ${-height/2})`
   );
 
   for (let x = -width; x < width * 2; x += gridSize) {
@@ -108,22 +107,21 @@ function drawGrid() {
 
   svg.prepend(gridGroup);
 }
+drawGrid();
 
-// 🧱 BUILDING TYPES
+// 🧱 BUILDINGS
 const buildingTypes = {
   city: { size: gridSize * 2, color: "#94a3b8" },
   mill: { size: gridSize * 2, color: "#facc15" },
-  flag: { size: gridSize * 1, color: "#22c55e" },
+  flag: { size: gridSize, color: "#22c55e" },
   bear: { size: gridSize * 3, color: "#ef4444" }
 };
 
 let currentTool = "city";
 let selected = null;
 let isDragging = false;
-let offsetX = 0;
-let offsetY = 0;
 
-// 🔘 TOOL SWITCH
+// 🔘 TOOL
 function setTool(tool) {
   currentTool = tool;
   document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -131,24 +129,27 @@ function setTool(tool) {
 }
 setTool("city");
 
-// 🏗️ CREATE BUILDING
+// 🏗️ PLACE
 svg.addEventListener("click", (e) => {
-  if (selected) return;
+  if (selected || isDragging) return;
 
   const rect = svg.getBoundingClientRect();
   const rawX = e.clientX - rect.left;
   const rawY = e.clientY - rect.top;
 
-const x = Math.floor(rawX / gridSize) * gridSize;
-const y = Math.floor(rawY / gridSize) * gridSize;
+  const x = Math.floor(rawX / gridSize) * gridSize;
+  const y = Math.floor(rawY / gridSize) * gridSize;
 
-  const type = buildingTypes[currentTool];
-  const labelText = document.getElementById("labelInput").value;
+  createBuilding(currentTool, x, y, document.getElementById("labelInput").value);
+});
+
+function createBuilding(typeName, x, y, labelText) {
+  const type = buildingTypes[typeName];
 
   const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  // FLAG RANGE (3x3)
-  if (currentTool === "flag") {
+  // FLAG RANGE
+  if (typeName === "flag") {
     const range = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     range.setAttribute("x", -gridSize);
     range.setAttribute("y", -gridSize);
@@ -160,7 +161,6 @@ const y = Math.floor(rawY / gridSize) * gridSize;
     group.appendChild(range);
   }
 
-  // MAIN BUILDING
   const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rectEl.setAttribute("x", 0);
   rectEl.setAttribute("y", 0);
@@ -171,20 +171,18 @@ const y = Math.floor(rawY / gridSize) * gridSize;
 
   group.appendChild(rectEl);
 
-  // LABEL
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("y", type.size / 2 + 15);
-  text.setAttribute("text-anchor", "middle");
+  text.setAttribute("y", type.size + 12);
+  text.setAttribute("text-anchor", "start");
   text.textContent = labelText;
 
   group.appendChild(text);
   group.setAttribute("transform", `translate(${x},${y})`);
 
-  // DRAG
+  // DRAG START
   group.addEventListener("mousedown", (e) => {
     selected = group;
-    offsetX = e.clientX;
-    offsetY = e.clientY;
+    isDragging = true;
     e.stopPropagation();
   });
 
@@ -195,9 +193,9 @@ const y = Math.floor(rawY / gridSize) * gridSize;
   });
 
   svg.appendChild(group);
-});
+}
 
-// 🖱️ DRAG MOVE
+// 🧲 DRAG SNAP
 svg.addEventListener("mousemove", (e) => {
   if (!selected) return;
 
@@ -205,13 +203,16 @@ svg.addEventListener("mousemove", (e) => {
   const rawX = e.clientX - rect.left;
   const rawY = e.clientY - rect.top;
 
-  const x = Math.round(rawX / gridSize) * gridSize;
-  const y = Math.round(rawY / gridSize) * gridSize;
+  const x = Math.floor(rawX / gridSize) * gridSize;
+  const y = Math.floor(rawY / gridSize) * gridSize;
 
   selected.setAttribute("transform", `translate(${x},${y})`);
 });
 
-svg.addEventListener("mouseup", () => selected = null);
+svg.addEventListener("mouseup", () => {
+  selected = null;
+  setTimeout(() => isDragging = false, 50);
+});
 
 // 💾 SAVE
 function saveLayout() {
@@ -239,21 +240,11 @@ function loadLayout() {
   document.querySelectorAll("svg g").forEach(g => g.remove());
 
   data.forEach(d => {
-    document.getElementById("labelInput").value = d.label;
-    createFakeClick(d.x, d.y);
+    createBuilding(currentTool, d.x, d.y, d.label);
   });
 }
 
-// helper
-function createFakeClick(x, y) {
-  createEvent = new MouseEvent("click", {
-    clientX: x,
-    clientY: y
-  });
-  svg.dispatchEvent(createEvent);
-}
-
-// 🗺️ MAP UPLOAD
+// 🗺️ MAP
 document.getElementById("mapUpload").addEventListener("change", function(e) {
   const file = e.target.files[0];
   if (!file) return;
