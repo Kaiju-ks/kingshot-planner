@@ -83,16 +83,22 @@ function drawGrid() {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
-  for (let x = 0; x < width; x += gridSize) {
-    for (let y = 0; y < height; y += gridSize) {
+  const halfW = gridSize / 2;
+  const halfH = gridSize / 2;
+
+  for (let row = -50; row < 50; row++) {
+    for (let col = -50; col < 50; col++) {
+
+      const x = col * gridSize + (row % 2 === 0 ? 0 : halfW);
+      const y = row * halfH;
 
       const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
       diamond.setAttribute("points", `
-        ${x},${y - gridSize/2}
-        ${x + gridSize/2},${y}
-        ${x},${y + gridSize/2}
-        ${x - gridSize/2},${y}
+        ${x},${y - halfH}
+        ${x + halfW},${y}
+        ${x},${y + halfH}
+        ${x - halfW},${y}
       `);
 
       diamond.setAttribute("fill", "none");
@@ -126,12 +132,16 @@ setTool("city");
 
 // 🧲 SNAP TO CENTER
 function snap(x, y) {
+  const row = Math.round(y / (gridSize / 2));
+  const offset = row % 2 === 0 ? 0 : gridSize / 2;
+
+  const col = Math.round((x - offset) / gridSize);
+
   return {
-    x: Math.round(x / gridSize) * gridSize,
-    y: Math.round(y / gridSize) * gridSize
+    x: col * gridSize + offset,
+    y: row * (gridSize / 2)
   };
 }
-
 // PLACE
 svg.addEventListener("click", (e) => {
   if (selected || isDragging) return;
