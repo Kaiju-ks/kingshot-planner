@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Kingshot Planner (Diamond Perfect)</title>
+  <title>Kingshot Planner</title>
   <style>
     body {
       margin: 0;
@@ -75,49 +75,7 @@
 const svg = document.getElementById("canvas");
 const gridSize = 30;
 
-// counters
 const counters = { city:1, mill:1, flag:1, bear:1 };
-
-// 🔷 DRAW GRID (CENTER BASED)
-function drawGrid() {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-
-  const halfW = gridSize / 2;
-  const halfH = gridSize / 2;
-
-  for (let row = -50; row < 50; row++) {
-    for (let col = -50; col < 50; col++) {
-
-      const x = col * gridSize + (row % 2 === 0 ? 0 : halfW);
-      const y = row * halfH;
-
-      const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-
-      diamond.setAttribute("points", `
-        ${x},${y - halfH}
-        ${x + halfW},${y}
-        ${x},${y + halfH}
-        ${x - halfW},${y}
-      `);
-
-      diamond.setAttribute("fill", "none");
-      diamond.setAttribute("stroke", "#475569");
-      diamond.setAttribute("stroke-width", "1.2");
-
-      svg.appendChild(diamond);
-    }
-  }
-}
-drawGrid();
-
-// building sizes
-const buildingTypes = {
-  city: { size: gridSize, color: "#94a3b8" },
-  mill: { size: gridSize * 2, color: "#facc15" },
-  flag: { size: gridSize, color: "#22c55e" },
-  bear: { size: gridSize * 3, color: "#ef4444" }
-};
 
 let currentTool = "city";
 let selected = null;
@@ -130,11 +88,39 @@ function setTool(tool) {
 }
 setTool("city");
 
-// 🧲 SNAP TO CENTER
+// 🔷 TRUE DIAMOND GRID
+function drawGrid() {
+  const half = gridSize / 2;
+
+  for (let row = -50; row < 50; row++) {
+    for (let col = -50; col < 50; col++) {
+
+      const x = col * gridSize + (row % 2 ? half : 0);
+      const y = row * half;
+
+      const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+      diamond.setAttribute("points", `
+        ${x},${y - half}
+        ${x + half},${y}
+        ${x},${y + half}
+        ${x - half},${y}
+      `);
+
+      diamond.setAttribute("fill", "none");
+      diamond.setAttribute("stroke", "#475569");
+      diamond.setAttribute("stroke-width", "1.2");
+
+      svg.appendChild(diamond);
+    }
+  }
+}
+drawGrid();
+
+// 🧲 SNAP
 function snap(x, y) {
   const row = Math.round(y / (gridSize / 2));
-  const offset = row % 2 === 0 ? 0 : gridSize / 2;
-
+  const offset = row % 2 ? gridSize / 2 : 0;
   const col = Math.round((x - offset) / gridSize);
 
   return {
@@ -142,72 +128,73 @@ function snap(x, y) {
     y: row * (gridSize / 2)
   };
 }
-// PLACE
-svg.addEventListener("click", (e) => {
-  if (selected || isDragging) return;
 
-  const rect = svg.getBoundingClientRect();
-  const rawX = e.clientX - rect.left;
-  const rawY = e.clientY - rect.top;
+// 🧱 DRAW TILE
+function drawTile(cx, cy, color) {
+  const half = gridSize / 2;
 
-  const pos = snap(rawX, rawY);
+  const tile = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
-  let input = document.getElementById("labelInput").value;
-  let label = input.trim() !== "" ? input :
-    `${currentTool.charAt(0).toUpperCase()+currentTool.slice(1)} ${counters[currentTool]++}`;
-
-  createBuilding(currentTool, pos.x, pos.y, label);
-});
-
-function createBuilding(typeName, x, y, labelText) {
-  const type = buildingTypes[typeName];
-
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-  // FLAG RANGE
-  if (typeName === "flag") {
-    const range = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-
-    range.setAttribute("points", `
-      ${x},${y - gridSize*1.5}
-      ${x + gridSize*1.5},${y}
-      ${x},${y + gridSize*1.5}
-      ${x - gridSize*1.5},${y}
-    `);
-
-    range.setAttribute("fill", "#22c55e33");
-    range.setAttribute("stroke", "#22c55e");
-
-    svg.appendChild(range);
-  }
-
-  // DIAMOND SHAPE (CENTERED)
-  const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-  const half = type.size / 2;
-
-  diamond.setAttribute("points", `
-    ${x},${y - half}
-    ${x + half},${y}
-    ${x},${y + half}
-    ${x - half},${y}
+  tile.setAttribute("points", `
+    ${cx},${cy - half}
+    ${cx + half},${cy}
+    ${cx},${cy + half}
+    ${cx - half},${cy}
   `);
 
-  diamond.setAttribute("fill", type.color);
-  diamond.setAttribute("stroke", "black");
+  tile.setAttribute("fill", color);
+  tile.setAttribute("stroke", "black");
 
-  group.appendChild(diamond);
+  return tile;
+}
 
-  // LABEL CENTER
+// 🏗️ CREATE BUILDING
+function createBuilding(type, x, y, label) {
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+  if (type === "city" || type === "mill") {
+    const offsets = [
+      { dx: 0, dy: 0 },
+      { dx: gridSize, dy: 0 },
+      { dx: gridSize/2, dy: gridSize/2 },
+      { dx: -gridSize/2, dy: gridSize/2 }
+    ];
+
+    offsets.forEach(o => {
+      group.appendChild(drawTile(x + o.dx, y + o.dy, type === "city" ? "#94a3b8" : "#facc15"));
+    });
+
+  } else if (type === "bear") {
+    const offsets = [
+      { dx: 0, dy: 0 },
+      { dx: gridSize, dy: 0 },
+      { dx: -gridSize, dy: 0 },
+      { dx: gridSize/2, dy: gridSize/2 },
+      { dx: -gridSize/2, dy: gridSize/2 },
+      { dx: gridSize/2, dy: -gridSize/2 },
+      { dx: -gridSize/2, dy: -gridSize/2 }
+    ];
+
+    offsets.forEach(o => {
+      group.appendChild(drawTile(x + o.dx, y + o.dy, "#ef4444"));
+    });
+
+  } else {
+    group.appendChild(drawTile(x, y, "#22c55e"));
+  }
+
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
   text.setAttribute("x", x);
   text.setAttribute("y", y);
   text.setAttribute("text-anchor", "middle");
   text.setAttribute("dominant-baseline", "middle");
-  text.textContent = labelText;
+  text.textContent = label;
 
   group.appendChild(text);
 
-  // DRAG
+  group.dataset.cx = x;
+  group.dataset.cy = y;
+
   group.addEventListener("mousedown", (e) => {
     selected = group;
     isDragging = true;
@@ -222,27 +209,46 @@ function createBuilding(typeName, x, y, labelText) {
   svg.appendChild(group);
 }
 
-// DRAG MOVE
+// PLACE
+svg.addEventListener("click", (e) => {
+  if (selected || isDragging) return;
+
+  const rect = svg.getBoundingClientRect();
+  const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
+
+  let input = document.getElementById("labelInput").value;
+  let label = input.trim() || `${currentTool} ${counters[currentTool]++}`;
+
+  createBuilding(currentTool, pos.x, pos.y, label);
+});
+
+// DRAG
 svg.addEventListener("mousemove", (e) => {
   if (!selected) return;
 
   const rect = svg.getBoundingClientRect();
   const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
 
-  const poly = selected.querySelector("polygon");
+  const dx = pos.x - selected.dataset.cx;
+  const dy = pos.y - selected.dataset.cy;
+
+  selected.querySelectorAll("polygon").forEach(p => {
+    const pts = p.getAttribute("points")
+      .split(" ")
+      .map(pt => {
+        let [px, py] = pt.split(",").map(Number);
+        return `${px + dx},${py + dy}`;
+      }).join(" ");
+
+    p.setAttribute("points", pts);
+  });
+
   const text = selected.querySelector("text");
-
-  const half = (poly.getBBox().width) / 2;
-
-  poly.setAttribute("points", `
-    ${pos.x},${pos.y - half}
-    ${pos.x + half},${pos.y}
-    ${pos.x},${pos.y + half}
-    ${pos.x - half},${pos.y}
-  `);
-
   text.setAttribute("x", pos.x);
   text.setAttribute("y", pos.y);
+
+  selected.dataset.cx = pos.x;
+  selected.dataset.cy = pos.y;
 });
 
 svg.addEventListener("mouseup", () => {
@@ -250,32 +256,24 @@ svg.addEventListener("mouseup", () => {
   setTimeout(() => isDragging = false, 50);
 });
 
-// SAVE
+// SAVE / LOAD
 function saveLayout() {
   const data = [];
-
   document.querySelectorAll("svg g").forEach(g => {
-    const text = g.querySelector("text");
+    const t = g.querySelector("text");
     data.push({
-      x: parseFloat(text.getAttribute("x")),
-      y: parseFloat(text.getAttribute("y")),
-      label: text.textContent
+      x: t.getAttribute("x"),
+      y: t.getAttribute("y"),
+      label: t.textContent
     });
   });
-
   localStorage.setItem("layout", JSON.stringify(data));
-  alert("Saved!");
 }
 
-// LOAD
 function loadLayout() {
   const data = JSON.parse(localStorage.getItem("layout") || "[]");
-
   document.querySelectorAll("svg g").forEach(g => g.remove());
-
-  data.forEach(d => {
-    createBuilding(currentTool, d.x, d.y, d.label);
-  });
+  data.forEach(d => createBuilding(currentTool, +d.x, +d.y, d.label));
 }
 </script>
 
