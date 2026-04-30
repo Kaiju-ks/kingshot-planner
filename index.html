@@ -3,55 +3,22 @@
 <head>
   <title>Kingshot Planner</title>
   <style>
-    body {
-      margin: 0;
-      background: #0f172a;
-      font-family: Arial;
-      color: white;
-    }
-
+    body { margin:0; background:#0f172a; font-family:Arial; }
     #toolbar {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      background: #1e293b;
-      padding: 12px;
-      border-radius: 10px;
-      z-index: 10;
+      position:fixed; top:15px; left:15px;
+      background:#1e293b; padding:12px; border-radius:10px;
     }
-
     button, input {
-      display: block;
-      margin: 5px 0;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: none;
+      display:block; margin:5px 0; padding:6px 10px;
+      border:none; border-radius:6px;
     }
-
-    button {
-      background: #334155;
-      color: white;
-      cursor: pointer;
-    }
-
-    .active {
-      background: gold;
-      color: black;
-    }
-
-    svg {
-      width: 100vw;
-      height: 100vh;
-      cursor: crosshair;
-    }
-
+    button { background:#334155; color:white; cursor:pointer; }
+    .active { background:gold; color:black; }
+    svg { width:100vw; height:100vh; cursor:crosshair; }
     text {
-      fill: white;
-      stroke: black;
-      stroke-width: 2;
-      paint-order: stroke;
-      font-size: 11px;
-      pointer-events: none;
+      fill:white; stroke:black; stroke-width:2;
+      paint-order:stroke; font-size:11px;
+      pointer-events:none;
     }
   </style>
 </head>
@@ -63,10 +30,10 @@
   <button onclick="setTool('flag')" id="flagBtn">Flag</button>
   <button onclick="setTool('bear')" id="bearBtn">Bear Trap</button>
 
-  <input type="text" id="labelInput" placeholder="Label..." />
+  <input id="labelInput" placeholder="Label...">
 
-  <button onclick="saveLayout()">Save Layout</button>
-  <button onclick="loadLayout()">Load Layout</button>
+  <button onclick="saveLayout()">Save</button>
+  <button onclick="loadLayout()">Load</button>
 </div>
 
 <svg id="canvas"></svg>
@@ -75,206 +42,205 @@
 const svg = document.getElementById("canvas");
 const gridSize = 30;
 
-const counters = { city:1, mill:1, flag:1, bear:1 };
-
 let currentTool = "city";
 let selected = null;
 let isDragging = false;
 
-function setTool(tool) {
+const counters = { city:1, mill:1, flag:1, bear:1 };
+
+// TOOL
+function setTool(tool){
   currentTool = tool;
-  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-  document.getElementById(tool + "Btn").classList.add("active");
+  document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  document.getElementById(tool+"Btn").classList.add("active");
 }
 setTool("city");
 
-// 🔷 TRUE DIAMOND GRID
-function drawGrid() {
-  const half = gridSize / 2;
+// 🔷 GRID
+function drawGrid(){
+  const half = gridSize/2;
 
-  for (let row = -50; row < 50; row++) {
-    for (let col = -50; col < 50; col++) {
+  for(let row=-50; row<50; row++){
+    for(let col=-50; col<50; col++){
 
-      const x = col * gridSize + (row % 2 ? half : 0);
-      const y = row * half;
+      const x = col*gridSize + (row%2 ? half : 0);
+      const y = row*half;
 
-      const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      const d = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
-      diamond.setAttribute("points", `
-        ${x},${y - half}
-        ${x + half},${y}
-        ${x},${y + half}
-        ${x - half},${y}
+      d.setAttribute("points",`
+        ${x},${y-half}
+        ${x+half},${y}
+        ${x},${y+half}
+        ${x-half},${y}
       `);
 
-      diamond.setAttribute("fill", "none");
-      diamond.setAttribute("stroke", "#475569");
-      diamond.setAttribute("stroke-width", "1.2");
+      d.setAttribute("fill","none");
+      d.setAttribute("stroke","#475569");
+      d.setAttribute("stroke-width","1.2");
 
-      svg.appendChild(diamond);
+      svg.appendChild(d);
     }
   }
 }
 drawGrid();
 
 // 🧲 SNAP
-function snap(x, y) {
-  const row = Math.round(y / (gridSize / 2));
-  const offset = row % 2 ? gridSize / 2 : 0;
-  const col = Math.round((x - offset) / gridSize);
+function snap(x,y){
+  const row = Math.round(y/(gridSize/2));
+  const offset = row%2 ? gridSize/2 : 0;
+  const col = Math.round((x-offset)/gridSize);
 
   return {
-    x: col * gridSize + offset,
-    y: row * (gridSize / 2)
+    x: col*gridSize + offset,
+    y: row*(gridSize/2)
   };
 }
 
-// 🧱 DRAW TILE
-function drawTile(cx, cy, color) {
-  const half = gridSize / 2;
+// 🔷 TILE
+function drawTile(cx,cy,color){
+  const h = gridSize/2;
+  const p = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
-  const tile = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-
-  tile.setAttribute("points", `
-    ${cx},${cy - half}
-    ${cx + half},${cy}
-    ${cx},${cy + half}
-    ${cx - half},${cy}
+  p.setAttribute("points",`
+    ${cx},${cy-h}
+    ${cx+h},${cy}
+    ${cx},${cy+h}
+    ${cx-h},${cy}
   `);
 
-  tile.setAttribute("fill", color);
-  tile.setAttribute("stroke", "black");
+  p.setAttribute("fill",color);
+  p.setAttribute("stroke","black");
 
-  return tile;
+  return p;
 }
 
-// 🏗️ CREATE BUILDING
-function createBuilding(type, x, y, label) {
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+// 🏗️ BUILDING
+function createBuilding(type,x,y,label){
+  const g = document.createElementNS("http://www.w3.org/2000/svg","g");
 
-  if (type === "city" || type === "mill") {
+  if(type==="city"||type==="mill"){
+    const color = type==="city" ? "#94a3b8" : "#facc15";
+
+    // 🔥 TRUE 2x2 DIAMOND
     const offsets = [
-  { dx: 0, dy: 0 },
-  { dx: gridSize/2, dy: gridSize/2 },
-  { dx: -gridSize/2, dy: gridSize/2 },
-  { dx: 0, dy: gridSize }
-];
+      {dx:0,dy:0},
+      {dx:gridSize/2,dy:gridSize/2},
+      {dx:-gridSize/2,dy:gridSize/2},
+      {dx:0,dy:gridSize}
     ];
 
-    offsets.forEach(o => {
-      group.appendChild(drawTile(x + o.dx, y + o.dy, type === "city" ? "#94a3b8" : "#facc15"));
+    offsets.forEach(o=>{
+      g.appendChild(drawTile(x+o.dx,y+o.dy,color));
     });
 
-  } else if (type === "bear") {
-    const offsets = [
-      { dx: 0, dy: 0 },
-      { dx: gridSize, dy: 0 },
-      { dx: -gridSize, dy: 0 },
-      { dx: gridSize/2, dy: gridSize/2 },
-      { dx: -gridSize/2, dy: gridSize/2 },
-      { dx: gridSize/2, dy: -gridSize/2 },
-      { dx: -gridSize/2, dy: -gridSize/2 }
+  } else if(type==="bear"){
+
+    const offsets=[
+      {dx:0,dy:0},
+      {dx:gridSize,dy:0},
+      {dx:-gridSize,dy:0},
+      {dx:gridSize/2,dy:gridSize/2},
+      {dx:-gridSize/2,dy:gridSize/2},
+      {dx:gridSize/2,dy:-gridSize/2},
+      {dx:-gridSize/2,dy:-gridSize/2}
     ];
 
-    offsets.forEach(o => {
-      group.appendChild(drawTile(x + o.dx, y + o.dy, "#ef4444"));
+    offsets.forEach(o=>{
+      g.appendChild(drawTile(x+o.dx,y+o.dy,"#ef4444"));
     });
 
   } else {
-    group.appendChild(drawTile(x, y, "#22c55e"));
+    g.appendChild(drawTile(x,y,"#22c55e"));
   }
 
-  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", x);
-  text.setAttribute("y", y);
-  text.setAttribute("text-anchor", "middle");
-  text.setAttribute("dominant-baseline", "middle");
-  text.textContent = label;
+  // LABEL
+  const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x",x);
+  t.setAttribute("y",y);
+  t.setAttribute("text-anchor","middle");
+  t.setAttribute("dominant-baseline","middle");
 
-  group.appendChild(text);
+  let input=document.getElementById("labelInput").value;
+  t.textContent = input || `${type} ${counters[type]++}`;
 
-  group.dataset.cx = x;
-  group.dataset.cy = y;
+  g.appendChild(t);
 
-  group.addEventListener("mousedown", (e) => {
-    selected = group;
-    isDragging = true;
+  // store center
+  g.dataset.cx=x;
+  g.dataset.cy=y;
+
+  // drag
+  g.addEventListener("mousedown",e=>{
+    selected=g;
+    isDragging=true;
     e.stopPropagation();
   });
 
-  group.addEventListener("dblclick", () => {
-    const newLabel = prompt("Edit label:", text.textContent);
-    if (newLabel !== null) text.textContent = newLabel;
-  });
-
-  svg.appendChild(group);
+  svg.appendChild(g);
 }
 
 // PLACE
-svg.addEventListener("click", (e) => {
-  if (selected || isDragging) return;
+svg.addEventListener("click",e=>{
+  if(selected||isDragging)return;
 
-  const rect = svg.getBoundingClientRect();
-  const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
+  const rect=svg.getBoundingClientRect();
+  const pos=snap(e.clientX-rect.left,e.clientY-rect.top);
 
-  let input = document.getElementById("labelInput").value;
-  let label = input.trim() || `${currentTool} ${counters[currentTool]++}`;
-
-  createBuilding(currentTool, pos.x, pos.y, label);
+  createBuilding(currentTool,pos.x,pos.y);
 });
 
 // DRAG
-svg.addEventListener("mousemove", (e) => {
-  if (!selected) return;
+svg.addEventListener("mousemove",e=>{
+  if(!selected)return;
 
-  const rect = svg.getBoundingClientRect();
-  const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
+  const rect=svg.getBoundingClientRect();
+  const pos=snap(e.clientX-rect.left,e.clientY-rect.top);
 
-  const dx = pos.x - selected.dataset.cx;
-  const dy = pos.y - selected.dataset.cy;
+  const dx=pos.x-selected.dataset.cx;
+  const dy=pos.y-selected.dataset.cy;
 
-  selected.querySelectorAll("polygon").forEach(p => {
-    const pts = p.getAttribute("points")
-      .split(" ")
-      .map(pt => {
-        let [px, py] = pt.split(",").map(Number);
-        return `${px + dx},${py + dy}`;
-      }).join(" ");
-
-    p.setAttribute("points", pts);
+  selected.querySelectorAll("polygon").forEach(p=>{
+    const pts=p.getAttribute("points").split(" ").map(pt=>{
+      let [px,py]=pt.split(",").map(Number);
+      return `${px+dx},${py+dy}`;
+    }).join(" ");
+    p.setAttribute("points",pts);
   });
 
-  const text = selected.querySelector("text");
-  text.setAttribute("x", pos.x);
-  text.setAttribute("y", pos.y);
+  const t=selected.querySelector("text");
+  t.setAttribute("x",pos.x);
+  t.setAttribute("y",pos.y);
 
-  selected.dataset.cx = pos.x;
-  selected.dataset.cy = pos.y;
+  selected.dataset.cx=pos.x;
+  selected.dataset.cy=pos.y;
 });
 
-svg.addEventListener("mouseup", () => {
-  selected = null;
-  setTimeout(() => isDragging = false, 50);
+svg.addEventListener("mouseup",()=>{
+  selected=null;
+  setTimeout(()=>isDragging=false,50);
 });
 
 // SAVE / LOAD
-function saveLayout() {
-  const data = [];
-  document.querySelectorAll("svg g").forEach(g => {
-    const t = g.querySelector("text");
+function saveLayout(){
+  const data=[];
+  document.querySelectorAll("svg g").forEach(g=>{
+    const t=g.querySelector("text");
     data.push({
-      x: t.getAttribute("x"),
-      y: t.getAttribute("y"),
-      label: t.textContent
+      x:t.getAttribute("x"),
+      y:t.getAttribute("y"),
+      label:t.textContent
     });
   });
-  localStorage.setItem("layout", JSON.stringify(data));
+  localStorage.setItem("layout",JSON.stringify(data));
 }
 
-function loadLayout() {
-  const data = JSON.parse(localStorage.getItem("layout") || "[]");
-  document.querySelectorAll("svg g").forEach(g => g.remove());
-  data.forEach(d => createBuilding(currentTool, +d.x, +d.y, d.label));
+function loadLayout(){
+  const data=JSON.parse(localStorage.getItem("layout")||"[]");
+  document.querySelectorAll("svg g").forEach(g=>g.remove());
+  data.forEach(d=>{
+    createBuilding(currentTool,+d.x,+d.y,d.label);
+  });
 }
 </script>
 
