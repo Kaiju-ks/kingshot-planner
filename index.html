@@ -157,9 +157,44 @@ const offsets=[
       g.appendChild(drawTile(x+o.dx,y+o.dy,"#ef4444"));
     });
 
-  } else {
-    g.appendChild(drawTile(x,y,"#22c55e"));
-  }
+} else {
+
+  // center tile
+  g.appendChild(drawTile(x, y, "#22c55e"));
+
+  // 🔥 highlight radius (3x3 diamond area)
+  const highlightOffsets = [
+    [0,0],
+
+    [1,0],[-1,0],
+    [0,1],[0,-1],
+
+    [1,1],[-1,1],
+    [1,-1],[-1,-1]
+  ];
+
+  highlightOffsets.forEach(([dx, dy]) => {
+
+    const hx = x + dx * gridSize;
+    const hy = y + dy * (gridSize / 2);
+
+    const area = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+
+    const h = gridSize / 2;
+
+    area.setAttribute("points",`
+      ${hx},${hy-h}
+      ${hx+h},${hy}
+      ${hx},${hy+h}
+      ${hx-h},${hy}
+    `);
+
+    area.setAttribute("fill", "#22c55e");
+    area.setAttribute("opacity", "0.2"); // 👈 transparency
+
+    g.insertBefore(area, g.firstChild); // 👈 draw behind flag
+  });
+}
 
   // LABEL
   const t = document.createElementNS("http://www.w3.org/2000/svg","text");
