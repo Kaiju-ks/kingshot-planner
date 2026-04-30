@@ -47,6 +47,9 @@
 
     text {
       fill: white;
+      stroke: black;
+      stroke-width: 2;
+      paint-order: stroke;
       font-size: 12px;
       pointer-events: none;
     }
@@ -71,41 +74,43 @@
 
 <script>
 const svg = document.getElementById("canvas");
-const gridSize = 30;
+const gridSize = 40;
 
-// 🔷 DIAMOND GRID
+// 🔢 COUNTERS
+const counters = {
+  city: 1,
+  mill: 1,
+  flag: 1,
+  bear: 1
+};
+
+// 🔷 DIAMOND GRID (true)
 function drawGrid() {
   const width = window.innerWidth;
   const height = window.innerHeight;
 
   const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  gridGroup.setAttribute(
-    "transform",
-    `translate(${width/2}, ${height/2}) rotate(45) translate(${-width/2}, ${-height/2})`
-  );
+  for (let x = -gridSize; x < width + gridSize; x += gridSize) {
+    for (let y = -gridSize; y < height + gridSize; y += gridSize) {
 
-  for (let x = -width; x < width * 2; x += gridSize) {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x);
-    line.setAttribute("y1", -height);
-    line.setAttribute("x2", x);
-    line.setAttribute("y2", height * 2);
-    line.setAttribute("stroke", "#1e293b");
-    gridGroup.appendChild(line);
+      const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+      diamond.setAttribute("points", `
+        ${x},${y - gridSize/2}
+        ${x + gridSize/2},${y}
+        ${x},${y + gridSize/2}
+        ${x - gridSize/2},${y}
+      `);
+
+      diamond.setAttribute("fill", "none");
+      diamond.setAttribute("stroke", "#1e293b");
+
+      gridGroup.appendChild(diamond);
+    }
   }
 
-  for (let y = -height; y < height * 2; y += gridSize) {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", -width);
-    line.setAttribute("y1", y);
-    line.setAttribute("x2", width * 2);
-    line.setAttribute("y2", y);
-    line.setAttribute("stroke", "#1e293b");
-    gridGroup.appendChild(line);
-  }
-
-  svg.prepend(gridGroup);
+  svg.appendChild(gridGroup);
 }
 drawGrid();
 
@@ -118,15 +123,10 @@ const buildingTypes = {
 };
 
 let currentTool = "city";
-  const counters = {
-  city: 1,
-  mill: 1,
-  flag: 1,
-  bear: 1
-};
 let selected = null;
 let isDragging = false;
 
+// TOOL SELECT
 function setTool(tool) {
   currentTool = tool;
   document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
@@ -134,43 +134,28 @@ function setTool(tool) {
 }
 setTool("city");
 
-// 🏗️ PLACE BUILDING
+// PLACE
 svg.addEventListener("click", (e) => {
   if (selected || isDragging) return;
 
   const rect = svg.getBoundingClientRect();
-const rawX = e.clientX - rect.left;
-const rawY = e.clientY - rect.top;
+  const rawX = e.clientX - rect.left;
+  const rawY = e.clientY - rect.top;
 
-// convert screen → diamond grid space
-const isoX = (rawX - rawY) / 2;
-const isoY = (rawX + rawY) / 2;
-
-// snap in diamond space
-const snappedX = Math.round(isoX / gridSize) * gridSize;
-const snappedY = Math.round(isoY / gridSize) * gridSize;
-
-// convert back → screen space
-const x = snappedX + snappedY;
-const y = snappedY - snappedX;
+  const x = Math.floor(rawX / gridSize) * gridSize;
+  const y = Math.floor(rawY / gridSize) * gridSize;
 
   let inputLabel = document.getElementById("labelInput").value;
 
-let finalLabel;
-if (inputLabel.trim() !== "") {
-  finalLabel = inputLabel;
-} else {
-  const names = {
-    city: "City",
-    mill: "Mill",
-    flag: "Flag",
-    bear: "Bear"
-  };
+  let label;
+  if (inputLabel.trim() !== "") {
+    label = inputLabel;
+  } else {
+    const names = { city: "City", mill: "Mill", flag: "Flag", bear: "Bear" };
+    label = `${names[currentTool]} ${counters[currentTool]++}`;
+  }
 
-  finalLabel = `${names[currentTool]} ${counters[currentTool]++}`;
-}
-
-createBuilding(currentTool, x, y, finalLabel);
+  createBuilding(currentTool, x, y, label);
 });
 
 function createBuilding(typeName, x, y, labelText) {
@@ -202,18 +187,19 @@ function createBuilding(typeName, x, y, labelText) {
 
   group.appendChild(rectEl);
 
-  // LABEL (counter-rotated)
+  // LABEL CENTERED
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("y", type.size + 12);
-  text.setAttribute("transform", "rotate(-45)");
+  text.setAttribute("x", type.size / 2);
+  text.setAttribute("y", type.size / 2);
+  text.setAttribute("text-anchor", "middle");
+  text.setAttribute("dominant-baseline", "middle");
   text.textContent = labelText;
 
   group.appendChild(text);
 
-  // 🔷 rotate building to match grid
-  group.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
+  group.setAttribute("transform", `translate(${x},${y})`);
 
-  // DRAG START
+  // DRAG
   group.addEventListener("mousedown", (e) => {
     selected = group;
     isDragging = true;
@@ -229,7 +215,7 @@ function createBuilding(typeName, x, y, labelText) {
   svg.appendChild(group);
 }
 
-// 🧲 DRAG SNAP
+// DRAG SNAP
 svg.addEventListener("mousemove", (e) => {
   if (!selected) return;
 
@@ -237,17 +223,10 @@ svg.addEventListener("mousemove", (e) => {
   const rawX = e.clientX - rect.left;
   const rawY = e.clientY - rect.top;
 
-const isoX = (rawX - rawY) / 2;
-const isoY = (rawX + rawY) / 2;
+  const x = Math.floor(rawX / gridSize) * gridSize;
+  const y = Math.floor(rawY / gridSize) * gridSize;
 
-const snappedX = Math.round(isoX / gridSize) * gridSize;
-const snappedY = Math.round(isoY / gridSize) * gridSize;
-
-const x = snappedX + snappedY;
-const y = snappedY - snappedX;
-
-  // 🔥 keep rotation applied
-  selected.setAttribute("transform", `translate(${x},${y}) rotate(45)`);
+  selected.setAttribute("transform", `translate(${x},${y})`);
 });
 
 svg.addEventListener("mouseup", () => {
@@ -255,7 +234,7 @@ svg.addEventListener("mouseup", () => {
   setTimeout(() => isDragging = false, 50);
 });
 
-// 💾 SAVE
+// SAVE
 function saveLayout() {
   const data = [];
 
@@ -274,7 +253,7 @@ function saveLayout() {
   alert("Saved!");
 }
 
-// 📂 LOAD
+// LOAD
 function loadLayout() {
   const data = JSON.parse(localStorage.getItem("layout") || "[]");
 
@@ -285,7 +264,7 @@ function loadLayout() {
   });
 }
 
-// 🗺️ MAP
+// MAP UPLOAD
 document.getElementById("mapUpload").addEventListener("change", function(e) {
   const file = e.target.files[0];
   if (!file) return;
