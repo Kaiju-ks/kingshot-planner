@@ -135,7 +135,7 @@ function drawTile(cx,cy,color){
 function createBuilding(type,x,y,label){
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
 
-  // ✅ CITY / MILL (correct 2x2 diamond)
+  // CITY / MILL
   if(type==="city"||type==="mill"){
     const color = type==="city" ? "#94a3b8" : "#facc15";
 
@@ -149,12 +149,10 @@ function createBuilding(type,x,y,label){
     offsets.forEach(o=>{
       g.appendChild(drawTile(x+o.dx,y+o.dy,color));
     });
-
   }
 
-  // ✅ BEAR (3x3 diamond)
+  // BEAR
   else if(type==="bear"){
-
     const offsets=[
       {dx:0,dy:0},
       {dx:gridSize,dy:0},
@@ -170,13 +168,10 @@ function createBuilding(type,x,y,label){
     offsets.forEach(o=>{
       g.appendChild(drawTile(x+o.dx,y+o.dy,"#ef4444"));
     });
-
   }
 
-  // ✅ FLAG (diamond range)
+  // FLAG
   else {
-
-    // center tile
     g.appendChild(drawTile(x,y,"#22c55e"));
 
     const size = gridSize * 5;
@@ -191,7 +186,7 @@ function createBuilding(type,x,y,label){
     `);
 
     diamond.setAttribute("fill", "#22c55e");
-    diamond.setAttribute("opacity", "0.12");
+    diamond.setAttribute("opacity", "0.08");
     diamond.setAttribute("stroke", "#22c55e");
     diamond.setAttribute("stroke-width", "2");
 
@@ -206,7 +201,7 @@ function createBuilding(type,x,y,label){
   t.setAttribute("dominant-baseline","middle");
 
   let input=document.getElementById("labelInput").value;
-  t.textContent = input || `${type} ${counters[type]++}`;
+  t.textContent = input || (type + " " + counters[type]++);
 
   g.appendChild(t);
 
@@ -214,17 +209,19 @@ function createBuilding(type,x,y,label){
   g.dataset.cy=y;
 
   // DRAG
-  g.addEventListener("mousedown",e=>{
+  g.addEventListener("mousedown", e=>{
     selected=g;
     isDragging=true;
     e.stopPropagation();
   });
-// 🗑️ RIGHT CLICK DELETE
-g.addEventListener("contextmenu", e=>{
-  e.preventDefault();
-  g.remove();
-  relabelBuildings(); // 🔥 add this line
-});
+
+  // 🗑️ DELETE + RELABEL
+  g.addEventListener("contextmenu", e=>{
+    e.preventDefault();
+    g.remove();
+    relabelBuildings();
+  });
+
   svg.appendChild(g);
 }
 
@@ -263,17 +260,7 @@ svg.addEventListener("mousemove",e=>{
   selected.dataset.cx=pos.x;
   selected.dataset.cy=pos.y;
 });
-
-svg.addEventListener("mouseup",()=>{
-  selected=null;
-  setTimeout(()=>isDragging=false,50);
-});
-svg.addEventListener("mouseup", ()=>{
-  selected=null;
-  setTimeout(()=>isDragging=false,50);
-});
-
-// 🔥 ADD THIS RIGHT HERE
+// 🔥 RELABEL FUNCTION
 function relabelBuildings() {
   const counts = { city: 1, mill: 1, flag: 1, bear: 1 };
 
@@ -290,7 +277,7 @@ function relabelBuildings() {
     else if (label.includes("bear")) type = "bear";
 
     if (type) {
-      text.textContent = `${type} ${counts[type]++}`;
+      text.textContent = type + " " + counts[type]++;
     }
   });
 
@@ -298,30 +285,6 @@ function relabelBuildings() {
   counters.mill = counts.mill;
   counters.flag = counts.flag;
   counters.bear = counts.bear;
-}
-
-// SAVE/LOAD
-function saveLayout(){
-// SAVE/LOAD
-function saveLayout(){
-  const data=[];
-  document.querySelectorAll("svg g").forEach(g=>{
-    const t=g.querySelector("text");
-    data.push({
-      x:t.getAttribute("x"),
-      y:t.getAttribute("y"),
-      label:t.textContent
-    });
-  });
-  localStorage.setItem("layout",JSON.stringify(data));
-}
-
-function loadLayout(){
-  const data=JSON.parse(localStorage.getItem("layout")||"[]");
-  document.querySelectorAll("svg g").forEach(g=>g.remove());
-  data.forEach(d=>{
-    createBuilding(currentTool,+d.x,+d.y,d.label);
-  });
 }
 </script>
 
