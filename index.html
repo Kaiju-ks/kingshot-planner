@@ -177,15 +177,21 @@ function createBuilding(typeName, x, y, labelText) {
   }
 
   // MAIN SHAPE
-  const rectEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rectEl.setAttribute("x", 0);
-  rectEl.setAttribute("y", 0);
-  rectEl.setAttribute("width", type.size);
-  rectEl.setAttribute("height", type.size);
-  rectEl.setAttribute("fill", type.color);
-  rectEl.setAttribute("stroke", "black");
+const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
-  group.appendChild(rectEl);
+const half = type.size / 2;
+
+diamond.setAttribute("points", `
+  ${half},0
+  ${type.size},${half}
+  ${half},${type.size}
+  0,${half}
+`);
+
+diamond.setAttribute("fill", type.color);
+diamond.setAttribute("stroke", "black");
+
+group.appendChild(diamond);
 
   // LABEL CENTERED
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
