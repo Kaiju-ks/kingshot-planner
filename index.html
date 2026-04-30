@@ -91,8 +91,35 @@ function drawGrid() {
 
   const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  for (let x = -gridSize; x < width + gridSize; x += gridSize) {
-    for (let y = -gridSize; y < height + gridSize; y += gridSize) {
+let i = 0;
+for (let x = -gridSize; x < width + gridSize; x += gridSize) {
+  let j = 0;
+
+  for (let y = -gridSize; y < height + gridSize; y += gridSize) {
+
+    const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+    diamond.setAttribute("points", `
+      ${x},${y - gridSize/2}
+      ${x + gridSize/2},${y}
+      ${x},${y + gridSize/2}
+      ${x - gridSize/2},${y}
+    `);
+
+    // 🔥 every 5 tiles = bold line
+    const isMajor = (i % 5 === 0 || j % 5 === 0);
+
+    diamond.setAttribute("stroke", isMajor ? "#64748b" : "#1e293b");
+    diamond.setAttribute("stroke-width", isMajor ? "2" : "1");
+
+    diamond.setAttribute("fill", "none");
+
+    gridGroup.appendChild(diamond);
+
+    j++;
+  }
+  i++;
+}
 
       const diamond = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
