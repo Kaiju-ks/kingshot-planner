@@ -154,10 +154,11 @@ function createBuilding(type, x, y, label) {
 
   if (type === "city" || type === "mill") {
     const offsets = [
-      { dx: 0, dy: 0 },
-      { dx: gridSize, dy: 0 },
-      { dx: gridSize/2, dy: gridSize/2 },
-      { dx: -gridSize/2, dy: gridSize/2 }
+  { dx: 0, dy: 0 },
+  { dx: gridSize/2, dy: gridSize/2 },
+  { dx: -gridSize/2, dy: gridSize/2 },
+  { dx: 0, dy: gridSize }
+];
     ];
 
     offsets.forEach(o => {
