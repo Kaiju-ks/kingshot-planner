@@ -234,24 +234,29 @@ svg.addEventListener("click",e=>{
 });
 
 // DRAG
-svg.addEventListener("mousemove",e=>{
-  if(!selected)return;
+svg.addEventListener("mousemove", e=>{
+  if(!selected) return;
 
-  const rect=svg.getBoundingClientRect();
-  const pos=snap(e.clientX-rect.left,e.clientY-rect.top);
+  const rect = svg.getBoundingClientRect();
+  const pos = snap(e.clientX - rect.left, e.clientY - rect.top);
 
-  const dx=pos.x-selected.dataset.cx;
-  const dy=pos.y-selected.dataset.cy;
+  const dx = pos.x - selected.dataset.cx;
+  const dy = pos.y - selected.dataset.cy;
 
   selected.querySelectorAll("polygon").forEach(el=>{
-    const pts=el.getAttribute("points").split(" ").map(pt=>{
-      let [px,py]=pt.split(",").map(Number);
+    const pts = el.getAttribute("points").split(" ").map(pt=>{
+      let [px,py] = pt.split(",").map(Number);
       return `${px+dx},${py+dy}`;
     }).join(" ");
-    el.setAttribute("points",pts);
-svg.addEventListener("mouseup", ()=>{
-  selected = null;
-  setTimeout(()=>isDragging=false,50);
+    el.setAttribute("points", pts);
+  });
+
+  const t = selected.querySelector("text");
+  t.setAttribute("x", pos.x);
+  t.setAttribute("y", pos.y);
+
+  selected.dataset.cx = pos.x;
+  selected.dataset.cy = pos.y;
 });
 
   const t=selected.querySelector("text");
