@@ -44,9 +44,7 @@
   <button onclick="setTool('mill')" id="millBtn">Mill</button>
   <button onclick="setTool('flag')" id="flagBtn">Flag</button>
   <button onclick="setTool('bear')" id="bearBtn">Bear Trap</button>
-
   <input id="labelInput" placeholder="Label...">
-
 </div>
 
 <svg id="canvas"></svg>
@@ -58,6 +56,9 @@ const gridSize = 40;
 let currentTool = "city";
 let selected = null;
 let isDragging = false;
+
+let centerOffsetX = 0;
+let centerOffsetY = 0;
 
 const counters = { city:1, mill:1, flag:1, bear:1 };
 
@@ -73,20 +74,21 @@ setTool("city");
 function drawGrid(){
   const half = gridSize/2;
 
- const width = window.innerWidth;
-const height = window.innerHeight;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
 
-const cols = Math.ceil(width / gridSize) + 4;
-const rows = Math.ceil(height / (gridSize/2)) + 4;
+  // 🔥 FIXED CENTER ALIGNMENT
+  centerOffsetX = Math.floor(width / 2 / gridSize) * gridSize;
+  centerOffsetY = Math.floor(height / 2 / (gridSize/2)) * (gridSize/2);
 
-for(let row = -rows/2; row < rows/2; row++){
-  for(let col = -cols/2; col < cols/2; col++){
+  const cols = Math.ceil(width / gridSize) + 4;
+  const rows = Math.ceil(height / (gridSize/2)) + 4;
 
-      const centerX = width / 2;
-const centerY = height / 2;
+  for(let row = -rows/2; row < rows/2; row++){
+    for(let col = -cols/2; col < cols/2; col++){
 
-const x = centerX + col*gridSize + (row%2 ? half : 0);
-const y = centerY + row*half;
+      const x = centerOffsetX + col*gridSize + (row%2 ? half : 0);
+      const y = centerOffsetY + row*half;
 
       const d = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
@@ -98,9 +100,9 @@ const y = centerY + row*half;
       `);
 
       d.setAttribute("fill","none");
-    d.setAttribute("stroke", "#94a3b8");   // softer gray-blue
-    d.setAttribute("stroke-opacity", "0.35");
-    d.setAttribute("stroke-width", "1.1");
+      d.setAttribute("stroke", "#94a3b8");
+      d.setAttribute("stroke-opacity", "0.35");
+      d.setAttribute("stroke-width", "1.1");
 
       svg.appendChild(d);
     }
@@ -108,15 +110,18 @@ const y = centerY + row*half;
 }
 drawGrid();
 
-// SNAP
+// SNAP (🔥 FIXED)
 function snap(x,y){
+  x -= centerOffsetX;
+  y -= centerOffsetY;
+
   const row = Math.round(y/(gridSize/2));
   const offset = row%2 ? gridSize/2 : 0;
   const col = Math.round((x-offset)/gridSize);
 
   return {
-    x: col*gridSize + offset,
-    y: row*(gridSize/2)
+    x: col*gridSize + offset + centerOffsetX,
+    y: row*(gridSize/2) + centerOffsetY
   };
 }
 
@@ -134,50 +139,47 @@ function drawTile(cx,cy,color){
   `);
 
   p.setAttribute("fill",color);
-p.setAttribute("stroke", "#000000aa");
-p.setAttribute("stroke-width", "1.2");
+  p.setAttribute("stroke", "#000000aa");
+  p.setAttribute("stroke-width", "1.2");
 
   return p;
 }
 
-// BUILDING
-function createBuilding(type,x,y,label){
+// BUILDING (unchanged)
+function createBuilding(type,x,y){
   const g = document.createElementNS("http://www.w3.org/2000/svg","g");
 
-  // CITY / MILL
-if(type==="city"||type==="mill"){
-  const color = type==="city" ? "#94a3b8" : "#facc15";
+  if(type==="city"||type==="mill"){
+    const color = type==="city" ? "#94a3b8" : "#facc15";
 
-  const offsets = [
-    {dx:0, dy:0},
-    {dx:gridSize/2, dy:gridSize/2},
-    {dx:-gridSize/2, dy:gridSize/2},
-    {dx:0, dy:gridSize}
-  ];
+    const offsets = [
+      {dx:0, dy:0},
+      {dx:gridSize/2, dy:gridSize/2},
+      {dx:-gridSize/2, dy:gridSize/2},
+      {dx:0, dy:gridSize}
+    ];
 
-  offsets.forEach(o=>{
-    g.appendChild(drawTile(x+o.dx,y+o.dy,color));
-  });
+    offsets.forEach(o=>{
+      g.appendChild(drawTile(x+o.dx,y+o.dy,color));
+    });
 
-  // 🔥 ADD THIS PART
-const outline = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+    const outline = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
-outline.setAttribute("points", `
-  ${x},${y - gridSize/2}
-  ${x + gridSize},${y + gridSize/2}
-  ${x},${y + gridSize*1.5}
-  ${x - gridSize},${y + gridSize/2}
-`);
+    outline.setAttribute("points", `
+      ${x},${y - gridSize/2}
+      ${x + gridSize},${y + gridSize/2}
+      ${x},${y + gridSize*1.5}
+      ${x - gridSize},${y + gridSize/2}
+    `);
 
-outline.setAttribute("fill", "none");
-outline.setAttribute("stroke", "black");
-outline.setAttribute("stroke-width", "2");
-outline.setAttribute("pointer-events", "none");
+    outline.setAttribute("fill", "none");
+    outline.setAttribute("stroke", "black");
+    outline.setAttribute("stroke-width", "2");
+    outline.setAttribute("pointer-events", "none");
 
-g.appendChild(outline);
-}
+    g.appendChild(outline);
+  }
 
-  // BEAR
   else if(type==="bear"){
     const offsets=[
       {dx:0,dy:0},
@@ -196,7 +198,6 @@ g.appendChild(outline);
     });
   }
 
-  // FLAG
   else {
     g.appendChild(drawTile(x,y,"#22c55e"));
 
@@ -213,13 +214,13 @@ g.appendChild(outline);
 
     diamond.setAttribute("fill", "#22c55e");
     diamond.setAttribute("opacity", "0.08");
-    diamond.setAttribute("stroke", "#22c55e");
+    diamond.setAttribute("stroke", "black");
     diamond.setAttribute("stroke-width", "2");
     diamond.setAttribute("pointer-events", "none");
+
     g.insertBefore(diamond, g.firstChild);
   }
 
-  // LABEL
   const t = document.createElementNS("http://www.w3.org/2000/svg","text");
   t.setAttribute("x",x);
   t.setAttribute("y",y);
@@ -234,14 +235,12 @@ g.appendChild(outline);
   g.dataset.cx=x;
   g.dataset.cy=y;
 
-  // DRAG
   g.addEventListener("mousedown", e=>{
     selected=g;
     isDragging=true;
     e.stopPropagation();
   });
 
-  // 🗑️ DELETE + RELABEL
   g.addEventListener("contextmenu", e=>{
     e.preventDefault();
     g.remove();
@@ -261,7 +260,7 @@ svg.addEventListener("click",e=>{
   createBuilding(currentTool,pos.x,pos.y);
 });
 
-// DRAG
+// DRAG (unchanged)
 svg.addEventListener("mousemove", e=>{
   if(!selected) return;
 
@@ -287,13 +286,12 @@ svg.addEventListener("mousemove", e=>{
   selected.dataset.cy = pos.y;
 });
 
-// ✅ MUST BE OUTSIDE
 svg.addEventListener("mouseup", ()=>{
   selected = null;
   setTimeout(()=>isDragging=false,50);
 });
-  
-// 🔥 RELABEL FUNCTION
+
+// RELABEL
 function relabelBuildings() {
   const counts = { city: 1, mill: 1, flag: 1, bear: 1 };
 
