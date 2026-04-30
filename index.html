@@ -189,8 +189,31 @@ const offsets=[
       ${hx-h},${hy}
     `);
 
-    area.setAttribute("fill", "#22c55e");
-    area.setAttribute("opacity", "0.1"); // 👈 transparency
+  const outlinePoints = [];
+
+const ringOffsets = [
+  [0,-1],
+  [1,0],
+  [0,1],
+  [-1,0]
+];
+
+// build diamond around center
+ringOffsets.forEach(([dx,dy]) => {
+  const px = x + dx * gridSize;
+  const py = y + dy * (gridSize/2);
+
+  outlinePoints.push(`${px},${py}`);
+});
+
+const outline = document.createElementNS("http://www.w3.org/2000/svg","polygon");
+
+outline.setAttribute("points", outlinePoints.join(" "));
+outline.setAttribute("fill", "none");
+outline.setAttribute("stroke", "#22c55e");
+outline.setAttribute("stroke-width", "3");
+
+g.insertBefore(outline, g.firstChild);
 
     g.insertBefore(area, g.firstChild); // 👈 draw behind flag
   });
