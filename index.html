@@ -75,6 +75,41 @@
 
 <script>
 const svg = document.getElementById("canvas");
+function drawGrid(size = 50) {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  gridGroup.setAttribute("id", "grid");
+
+  // vertical lines
+  for (let x = 0; x < width; x += size) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x);
+    line.setAttribute("y1", 0);
+    line.setAttribute("x2", x);
+    line.setAttribute("y2", height);
+    line.setAttribute("stroke", "#1e293b");
+    line.setAttribute("stroke-width", "1");
+    gridGroup.appendChild(line);
+  }
+
+  // horizontal lines
+  for (let y = 0; y < height; y += size) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", 0);
+    line.setAttribute("y1", y);
+    line.setAttribute("x2", width);
+    line.setAttribute("y2", y);
+    line.setAttribute("stroke", "#1e293b");
+    line.setAttribute("stroke-width", "1");
+    gridGroup.appendChild(line);
+  }
+
+  svg.prepend(gridGroup);
+}
+
+drawGrid();
 let currentTool = "city";
 let selectedGroup = null;
 let offsetX = 0;
