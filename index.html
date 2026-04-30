@@ -80,27 +80,34 @@ function drawGrid() {
 
   const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-  for (let x = 0; x < width; x += gridSize) {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  // rotate entire grid 45° around center
+  gridGroup.setAttribute(
+    "transform",
+    `rotate(45 ${width / 2} ${height / 2})`
+  );
+
+  for (let x = -width; x < width * 2; x += gridSize) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
     line.setAttribute("x1", x);
-    line.setAttribute("y1", 0);
+    line.setAttribute("y1", -height);
     line.setAttribute("x2", x);
-    line.setAttribute("y2", height);
+    line.setAttribute("y2", height * 2);
     line.setAttribute("stroke", "#1e293b");
-    svg.appendChild(line);
+    gridGroup.appendChild(line);
   }
 
-  for (let y = 0; y < height; y += gridSize) {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", 0);
+  for (let y = -height; y < height * 2; y += gridSize) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", -width);
     line.setAttribute("y1", y);
-    line.setAttribute("x2", width);
+    line.setAttribute("x2", width * 2);
     line.setAttribute("y2", y);
     line.setAttribute("stroke", "#1e293b");
-    svg.appendChild(line);
+    gridGroup.appendChild(line);
   }
+
+  svg.prepend(gridGroup);
 }
-drawGrid();
 
 // 🧱 BUILDING TYPES
 const buildingTypes = {
