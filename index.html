@@ -73,11 +73,20 @@ setTool("city");
 function drawGrid(){
   const half = gridSize/2;
 
-  for(let row=-50; row<50; row++){
-    for(let col=-50; col<50; col++){
+ const width = window.innerWidth;
+const height = window.innerHeight;
 
-      const x = col*gridSize + (row%2 ? half : 0);
-      const y = row*half;
+const cols = Math.ceil(width / gridSize) + 4;
+const rows = Math.ceil(height / (gridSize/2)) + 4;
+
+for(let row = -rows/2; row < rows/2; row++){
+  for(let col = -cols/2; col < cols/2; col++){
+
+      const centerX = width / 2;
+const centerY = height / 2;
+
+const x = centerX + col*gridSize + (row%2 ? half : 0);
+const y = centerY + row*half;
 
       const d = document.createElementNS("http://www.w3.org/2000/svg","polygon");
 
