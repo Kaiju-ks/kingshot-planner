@@ -295,9 +295,11 @@ g.appendChild(outline);
     e.stopPropagation();
   });
 
-  g.addEventListener("contextmenu",e=>{
-    e.preventDefault();
-    g.remove();
+g.addEventListener("contextmenu",e=>{
+  e.preventDefault();
+  g.remove();
+  relabelBuildings();
+});
   });
 
   svg.appendChild(g);
@@ -335,6 +337,45 @@ svg.addEventListener("mousemove",e=>{
 
   selected.dataset.cx=pos.x;
   selected.dataset.cy=pos.y;
+});
+  selected.dataset.cy=pos.y;
+});
+
+function relabelBuildings() {
+  const counts = {
+    city:1,
+    mill:1,
+    flag:1,
+    bear:1
+  };
+
+  document.querySelectorAll("svg g").forEach(g => {
+    const text = g.querySelector("text");
+    if (!text) return;
+
+    const label = text.textContent.toLowerCase();
+
+    let type = null;
+
+    if(label.includes("city")) type="city";
+    else if(label.includes("mill")) type="mill";
+    else if(label.includes("flag")) type="flag";
+    else if(label.includes("bear")) type="bear";
+
+    if(type){
+      text.textContent = type + " " + counts[type]++;
+    }
+  });
+
+  counters.city = counts.city;
+  counters.mill = counts.mill;
+  counters.flag = counts.flag;
+  counters.bear = counts.bear;
+}
+
+svg.addEventListener("mouseup",()=>{
+  selected=null;
+  setTimeout(()=>isDragging=false,50);
 });
 
 svg.addEventListener("mouseup",()=>{
