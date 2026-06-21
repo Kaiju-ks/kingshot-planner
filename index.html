@@ -347,11 +347,11 @@ g.dataset.type = type;
   g.dataset.cx=x;
   g.dataset.cy=y;
 
-  g.addEventListener("mousedown",e=>{
-    selected=g;
-    isDragging=true;
-    e.stopPropagation();
-  });
+g.addEventListener("mousedown",e=>{
+  selected=g;
+  isDragging=true;
+  e.stopPropagation();
+});
 
 g.addEventListener("contextmenu",e=>{
   e.preventDefault();
@@ -393,12 +393,16 @@ svg.addEventListener("mousemove",e=>{
       let [px,py]=pt.split(",").map(Number);
       return `${px+dx},${py+dy}`;
     }).join(" ");
+
     el.setAttribute("points",pts);
   });
 
   const t=selected.querySelector("text");
-  t.setAttribute("x",pos.x);
-  t.setAttribute("y",pos.y);
+
+  if(t){
+    t.setAttribute("x",pos.x);
+    t.setAttribute("y",pos.y);
+  }
 
   selected.dataset.cx=pos.x;
   selected.dataset.cy=pos.y;
