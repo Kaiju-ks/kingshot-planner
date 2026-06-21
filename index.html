@@ -297,7 +297,10 @@ g.appendChild(outline);
 
 g.addEventListener("contextmenu",e=>{
   e.preventDefault();
-  g.remove();
+
+  const parent = e.currentTarget;
+  parent.remove();
+
   relabelBuildings();
 });
 
