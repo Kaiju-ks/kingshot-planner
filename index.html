@@ -224,7 +224,25 @@ function createBuilding(type,x,y){
     ];
 
     offsets.forEach(o=>g.appendChild(drawTile(x+o.dx,y+o.dy,color)));
-  }
+    const outline = document.createElementNS(
+  "http://www.w3.org/2000/svg",
+  "polygon"
+);
+
+outline.setAttribute("points", `
+  ${x},${y-gridSize/2}
+  ${x+gridSize},${y+gridSize/2}
+  ${x},${y+gridSize*1.5}
+  ${x-gridSize},${y+gridSize/2}
+`);
+
+outline.setAttribute("fill","none");
+outline.setAttribute("stroke","#111827");
+outline.setAttribute("stroke-width","2");
+outline.setAttribute("pointer-events","none");
+
+g.appendChild(outline);
+}
 
   else if(type==="bear"){
     const offsets=[
