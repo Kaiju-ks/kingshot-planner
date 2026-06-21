@@ -31,7 +31,26 @@
       border-radius:6px;
     }
 
-    button { background:#334155; color:white; cursor:pointer; }
+    button{
+  width:100%;
+  padding:12px;
+
+  background:white;
+  color:#334155;
+
+  border:1px solid #cbd5e1;
+
+  border-radius:10px;
+
+  font-weight:600;
+
+  transition:.15s;
+}
+
+button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+}
     .active { background:gold; color:black; }
 
     svg { width:100vw; height:100vh; cursor:crosshair; }
