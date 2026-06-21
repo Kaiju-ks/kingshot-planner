@@ -281,8 +281,17 @@ g.appendChild(outline);
   t.setAttribute("text-anchor","middle");
   t.setAttribute("dominant-baseline","middle");
 
-  let input=document.getElementById("labelInput").value;
-  t.textContent=input || (type+" "+counters[type]++);
+let input=document.getElementById("labelInput").value;
+
+if(input.trim() !== ""){
+  t.textContent = input;
+}
+else{
+  t.textContent = `${type} ${counters[type]}`;
+  counters[type]++;
+}
+
+g.dataset.type = type;
 
   g.appendChild(t);
 
@@ -298,8 +307,10 @@ g.appendChild(outline);
 g.addEventListener("contextmenu",e=>{
   e.preventDefault();
 
-  const parent = e.currentTarget;
-  parent.remove();
+  selected = null;
+  isDragging = false;
+
+  g.remove();
 
   relabelBuildings();
 });
@@ -342,7 +353,8 @@ svg.addEventListener("mousemove",e=>{
   selected.dataset.cy=pos.y;
 });
 
-function relabelBuildings() {
+function relabelBuildings(){
+
   const counts = {
     city:1,
     mill:1,
@@ -350,22 +362,23 @@ function relabelBuildings() {
     bear:1
   };
 
-  document.querySelectorAll("svg g").forEach(g => {
+  document.querySelectorAll("svg g").forEach(g=>{
+
+    const type = g.dataset.type;
+    if(!type) return;
+
     const text = g.querySelector("text");
-    if (!text) return;
+    if(!text) return;
 
-    const label = text.textContent.toLowerCase();
-
-    let type = null;
-
-    if(label.includes("city")) type="city";
-    else if(label.includes("mill")) type="mill";
-    else if(label.includes("flag")) type="flag";
-    else if(label.includes("bear")) type="bear";
-
-    if(type){
-      text.textContent = type + " " + counts[type]++;
+    if(
+      text.textContent.startsWith("city") ||
+      text.textContent.startsWith("mill") ||
+      text.textContent.startsWith("flag") ||
+      text.textContent.startsWith("bear")
+    ){
+      text.textContent = `${type} ${counts[type]++}`;
     }
+
   });
 
   counters.city = counts.city;
